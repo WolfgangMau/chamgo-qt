@@ -1,6 +1,3 @@
-[submodule "vendor/github.com/therecipe/qt"]
-	path = vendor/github.com/therecipe/qt
-	url = https://github.com/therecipe/qt
 [submodule "vendor/go.bug.st/serial.v1"]
 	path = vendor/go.bug.st/serial.v1
 	url = https://go.bug.st/git/serial.v1.git
