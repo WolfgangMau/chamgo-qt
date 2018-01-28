@@ -18,7 +18,7 @@ I will release some pre-compiled binaries ... some day ;-)
 
 ### Screenshots
 #### Serial-Terminal
-![Serial-Terminal](https://github.com/WolfgangMau/chamgo-qt/blob/master/screenshots/Serial-Terminal.png)
+
 
 #### Tag-Editor
 ![Tag-Editor](https://github.com/WolfgangMau/chamgo-qt/blob/master/screenshots/Tag-Editor.png)
