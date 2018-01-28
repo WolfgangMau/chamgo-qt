@@ -4,15 +4,15 @@ import (
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 )
 
 var temp string
 var temp2 []string
 var myTime time.Time
 
-var GetSlotTicker  *time.Ticker
+var GetSlotTicker *time.Ticker
 
 func buttonClicked(btn int) {
 
@@ -59,7 +59,7 @@ func buttonClicked(btn int) {
 func slotChecked(slot, state int) {
 	log.Printf(" Checked %d - state: %d\n", slot, state)
 	if state == 2 && Connected {
-		if Device == Devices.name[1]{
+		if Device == Devices.name[1] {
 			//RevG's first Slot is 1 and Last Slot is 8
 			temp2 = serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot+1))
 		} else {
@@ -82,15 +82,15 @@ func applySlots() {
 	for _, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			log.Printf("********************\nupdating %s\n",s.slotl.Text())
+			log.Printf("********************\nupdating %s\n", s.slotl.Text())
 			//set mode
-			temp2 = serialCMD(Commands.config+"="+s.mode.CurrentText())
+			temp2 = serialCMD(Commands.config + "=" + s.mode.CurrentText())
 			//set uid
-			temp2 = serialCMD(Commands.uid+"="+s.uid.Text())
+			temp2 = serialCMD(Commands.uid + "=" + s.uid.Text())
 			//set  button short
-			temp2 = serialCMD(Commands.button+"="+s.btns.CurrentText())
+			temp2 = serialCMD(Commands.button + "=" + s.btns.CurrentText())
 			//set button long
-			temp2 = serialCMD(Commands.lbutton+"="+s.btnl.CurrentText())
+			temp2 = serialCMD(Commands.lbutton + "=" + s.btnl.CurrentText())
 		}
 	}
 }
@@ -214,14 +214,14 @@ func checkCurrentSelection() {
 		for myTime = range GetSlotTicker.C {
 			selected := serialCMD(DeviceActions.selectedSlot)
 			if Device == Devices.name[1] {
-				hardSlot,_ := strconv.Atoi(selected[0])
-				softSlot = hardSlot-1
+				hardSlot, _ := strconv.Atoi(selected[0])
+				softSlot = hardSlot - 1
 			} else {
-				hardSlot,_ := strconv.Atoi(strings.Replace(selected[0],"NO.","",1))
+				hardSlot, _ := strconv.Atoi(strings.Replace(selected[0], "NO.", "", 1))
 				softSlot = hardSlot
 			}
 			log.Printf("Tick at %s - Current Selected Slot: %d\n\n", myTime, softSlot+1)
-			for i,s := range Slots {
+			for i, s := range Slots {
 				if s.slot.IsChecked() && i != softSlot {
 					s.slot.SetChecked(false)
 				} else {
