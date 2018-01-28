@@ -12,9 +12,9 @@ ToDo Top-Topics:
 - LFU-Connection
 - Dump upload/download (xmodem)
 
-to install/create the qt-bindings follow the instartuctions in the wiki: https://github.com/therecipe/qt/wiki
+to install/create the qt-bindings follow the instuctions in the wiki: https://github.com/therecipe/qt/wiki
 
-I will release some pre-compiled binaries ... some day ;-)
+there are also some pre-compiled binaries in the ['release-section'](https://github.com/WolfgangMau/chamgo-qt/releases/tag/v0.0.1-alpha)
 
 ### Screenshots
 #### Serial-Terminal
