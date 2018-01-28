@@ -12,4 +12,6 @@ ToDo Top-Topics:
 - LFU-Connection
 - Dump upload/download (xmodem)
 
-to install/create the qt-bindings follw the instartuctions in the wiki: https://github.com/therecipe/qt/wiki
+to install/create the qt-bindings follow the instartuctions in the wiki: https://github.com/therecipe/qt/wiki
+
+I will release some pre-compiled binaries ... some day ;-)
