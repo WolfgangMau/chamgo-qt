@@ -1,3 +1,5 @@
 build/
 moc*
 xmodem.c_back
+.DS_Store
+deploy/
