@@ -217,7 +217,7 @@ func checkCurrentSelection() {
 				hardSlot, _ := strconv.Atoi(selected[2])
 				softSlot = hardSlot - 1
 			} else {
-				hardSlot, _ := strconv.Atoi(strings.Replace(selected[0], "NO.", "", 1))
+				hardSlot, _ := strconv.Atoi(strings.Replace(selected[2], "NO.", "", 1))
 				softSlot = hardSlot
 			}
 			log.Printf("Tick at %s - Current Selected Slot: %d\n\n", myTime, softSlot+1)
