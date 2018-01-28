@@ -15,3 +15,10 @@ ToDo Top-Topics:
 to install/create the qt-bindings follow the instartuctions in the wiki: https://github.com/therecipe/qt/wiki
 
 I will release some pre-compiled binaries ... some day ;-)
+
+### Screenshots
+#### Serial-Terminal
+![Serial-Terminal](https://github.com/WolfgangMau/chamgo-qt/blob/master/screenshots/Serial-Terminal.png)
+
+#### Tag-Editor
+![Tag-Editor](https://github.com/WolfgangMau/chamgo-qt/blob/master/screenshots/Tag-Editor.png)
