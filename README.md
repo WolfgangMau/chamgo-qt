@@ -11,3 +11,5 @@ what works in general:
 ToDo Top-Topics:
 - LFU-Connection
 - Dump upload/download (xmodem)
+
+to install/create the qt-bindings follw the instartuctions in the wiki: https://github.com/therecipe/qt/wiki
