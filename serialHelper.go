@@ -44,16 +44,7 @@ func connectSerial(selSerialPort string) (err error) {
 func serialCMD(cmd string) []string {
 	log.Print("-> " + cmd)
 	temp := sendSerial(cmd)
-	res := strings.Split(temp, "\r")
-	log.Printf("<- %v\n", res)
-	if len(res) == 3 {
-		temp = strings.Replace(res[1], "\n", "", -1)
-		res := strings.Split(temp, ",")
-		if len(res) > 0 {
-			return res
-		}
-	}
-	return nil
+	return responseSplit(temp)
 }
 
 func sendSerial(cmdStr string) string {
@@ -97,4 +88,31 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 	log.Printf("Long : %s -> toks : %d -> short : %s\n", longInfo, len(toks), shortInfo)
 	return
+}
+
+func responseSplit(res string) []string {
+	var result []string
+	res = strings.Replace(res, "\n","#",-1)
+	res = strings.Replace(res, "\r","#",-1)
+	res = strings.Replace(res,"##","#",-1)
+
+	temp2 = strings.Split(res, ":")
+	if len(temp2[1]) >= 2 {
+		result = append(result, temp2[0])
+		temp := strings.Split(temp2[1], "#")
+		if len(temp) > 0 {
+			for _, s := range temp {
+				if s != "" {
+					result = append(result, s)
+				}
+			}
+		}
+		for i,s := range result {
+			log.Printf("result[%d] = %s\n",i,s)
+		}
+		return result
+	} else {
+		log.Printf("result has no reslutcode! %s\n",res)
+	}
+	return nil
 }

@@ -166,8 +166,8 @@ func populateSlots() {
 		return
 	}
 	if populated == false {
-		TagModes = serialCMD(DeviceActions.getModes)
-		TagButtons = serialCMD(DeviceActions.getButtons)
+		TagModes = strings.Split(serialCMD(DeviceActions.getModes)[2],",")
+		TagButtons =  strings.Split(serialCMD(DeviceActions.getButtons)[2],",")
 		//unselect all slots
 		buttonClicked(1)
 		populated = true
@@ -179,26 +179,26 @@ func populateSlots() {
 		//get slot uid
 		uid := serialCMD(DeviceActions.getUid)
 		//set uid to lineedit
-		s.uid.SetText(uid[0])
+		s.uid.SetText(uid[2])
 
 		size := serialCMD(DeviceActions.getSize)
-		s.size.SetText(size[0])
+		s.size.SetText(size[2])
 
 		mode := serialCMD(DeviceActions.getMode)
-		_, modeindex := getPosFromList(mode[0], TagModes)
+		_, modeindex := getPosFromList(mode[2], TagModes)
 		s.mode.Clear()
 		s.mode.AddItems(TagModes)
 		s.mode.SetCurrentIndex(modeindex)
 
 		buttonl := serialCMD(DeviceActions.getButton)
-		_, buttonlindex := getPosFromList(buttonl[0], TagButtons)
+		_, buttonlindex := getPosFromList(buttonl[2], TagButtons)
 		s.btnl.Clear()
 		s.btnl.AddItems(TagButtons)
 		s.btnl.SetCurrentIndex(buttonlindex)
 
 		// ToDo: currently mostly faked - currently not implemented in my revG
 		buttons := serialCMD(DeviceActions.getButton)
-		_, buttonsindex := getPosFromList(buttons[0], TagButtons)
+		_, buttonsindex := getPosFromList(buttons[2], TagButtons)
 		s.btns.Clear()
 		s.btns.AddItems(TagButtons)
 		s.btns.SetCurrentIndex(buttonsindex)
@@ -214,7 +214,7 @@ func checkCurrentSelection() {
 		for myTime = range GetSlotTicker.C {
 			selected := serialCMD(DeviceActions.selectedSlot)
 			if Device == Devices.name[1] {
-				hardSlot, _ := strconv.Atoi(selected[0])
+				hardSlot, _ := strconv.Atoi(selected[2])
 				softSlot = hardSlot - 1
 			} else {
 				hardSlot, _ := strconv.Atoi(strings.Replace(selected[0], "NO.", "", 1))
