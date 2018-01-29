@@ -1,5 +1,6 @@
 package main
 
+
 var populated = false
 var TagModes []string
 var TagButtons []string
@@ -13,6 +14,14 @@ type devices struct {
 
 func (d *devices) load() {
 	d.name = []string{"RevE-Rebooted", "RevG"}
+}
+
+
+//var SerialResponse serialResponse
+type serialResponse struct {
+	Code int
+	String string
+	Payload string
 }
 
 var Commands commands

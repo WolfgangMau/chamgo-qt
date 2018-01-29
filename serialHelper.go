@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"go.bug.st/serial.v1"
 	"log"
 	"strings"
+	"strconv"
+	"reflect"
 )
 
 var serialPort serial.Port
@@ -16,7 +17,7 @@ func getSerialPorts() (ports []string, perr error) {
 		return nil, err
 	}
 	if len(ports) == 0 {
-		fmt.Println("No serial ports found!")
+		log.Println("No serial ports found!")
 		return nil, nil
 	}
 
@@ -70,7 +71,7 @@ func receiveSerial() (recv string) {
 			return ""
 		}
 		if n <= 0 {
-			fmt.Println("\nEOF")
+			log.Println("\nEOF")
 			return ""
 		}
 		return string(buff[:n])
@@ -90,8 +91,11 @@ func deviceInfo(longInfo string) (shortInfo string) {
 	return
 }
 
+
+//ToDo: implement structured response
 func responseSplit(res string) []string {
 	var result []string
+	var SerialResponse  serialResponse
 	res = strings.Replace(res, "\n","#",-1)
 	res = strings.Replace(res, "\r","#",-1)
 	res = strings.Replace(res,"##","#",-1)
@@ -99,9 +103,16 @@ func responseSplit(res string) []string {
 	temp2 = strings.Split(res, ":")
 	if len(temp2[1]) >= 2 {
 		result = append(result, temp2[0])
+		SerialResponse.Code,_ = strconv.Atoi(temp2[0])
 		temp := strings.Split(temp2[1], "#")
 		if len(temp) > 0 {
-			for _, s := range temp {
+			for i, s := range temp {
+				switch i {
+				case 0 :
+					SerialResponse.String = s
+				case 1 :
+					SerialResponse.Payload = s
+				}
 				if s != "" {
 					result = append(result, s)
 				}
@@ -110,9 +121,21 @@ func responseSplit(res string) []string {
 		for i,s := range result {
 			log.Printf("result[%d] = %s\n",i,s)
 		}
+		dumpResp(SerialResponse)
 		return result
 	} else {
 		log.Printf("result has no reslutcode! %s\n",res)
 	}
 	return nil
+}
+
+func dumpResp(t serialResponse) {
+	s := reflect.ValueOf(&t).Elem()
+	typeOfT := s.Type()
+
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		log.Printf("%d: %s %s = %v\n", i,
+			typeOfT.Field(i).Name, f.Type(), f.Interface())
+	}
 }
