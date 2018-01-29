@@ -56,16 +56,19 @@ func serialTab() *widgets.QWidget {
 		if serialConnectButton.Text() == "Connect" {
 			err := connectSerial(serialPortSelect.CurrentText())
 			if err != nil {
-				log.Fatal("can't connect to Serial: ", err)
+				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial",
+					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 			} else {
 				Device = deviceSelect.CurrentText()
 				Commands.load(Device)
 				DeviceActions.load(Device)
 
-				serialConnectButton.SetText("Disconnect")
-				serialSendButton.SetDisabled(false)
-				serialSendButton.Repaint()
 				sendSerialCmd(Commands.version + "?")
+				if SerialResponse.Code >=100 {
+					serialConnectButton.SetText("Disconnect")
+					serialSendButton.SetDisabled(false)
+					serialSendButton.Repaint()
+				}
 
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
