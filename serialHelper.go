@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
+	"errors"
 )
 
 var serialPort serial.Port
@@ -24,22 +26,40 @@ func getSerialPorts() (ports []string, perr error) {
 	return ports, nil
 }
 
-func connectSerial(selSerialPort string) (err error) {
-	if selSerialPort == "" {
-		return nil
+func connectSerial(selSerialPort string) ( err error) {
+	c1 := make(chan serial.Port, 1)
+	go func() {
+		//time.Sleep(time.Second * 1)
+
+		if selSerialPort == "" {
+			err = errors.New("no device given")
+		}
+		mode := &serial.Mode{
+			BaudRate: 9600,
+			Parity:   serial.NoParity,
+			DataBits: 8,
+			StopBits: serial.OneStopBit,
+		}
+		serialPort, err = serial.Open(selSerialPort, mode)
+		if err != nil {
+			log.Println(err)
+		} else {
+			c1 <- serialPort
+		}
+	}()
+	select {
+	case res := <-c1:
+		log.Printf("connected %v\n", res)
+	case <-time.After(time.Second * 2):
+		log.Println("serial connection timeout")
+		err = errors.New("serial connection timeout")
 	}
-	mode := &serial.Mode{
-		BaudRate: 9600,
-		Parity:   serial.NoParity,
-		DataBits: 8,
-		StopBits: serial.OneStopBit,
-	}
-	serialPort, err = serial.Open(selSerialPort, mode)
 
 	if err != nil {
 		return err
 	}
-	return nil
+
+	return
 }
 
 func sendSerialCmd(cmd string) {
@@ -54,16 +74,27 @@ func sendSerialCmd(cmd string) {
 }
 
 func sendSerial(cmdStr string) string {
-	//myLog(cmdStr + "\n")
-	_, err := serialPort.Write([]byte(cmdStr + "\r"))
-	if err != nil {
-		log.Fatal(err)
+	var temp string
+	c1 := make(chan string, 1)
+	go func() {
+		//time.Sleep(time.Second * 2)
+		_, err := serialPort.Write([]byte(cmdStr + "\r"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		temp = receiveSerial()
+		if temp == "1" {
+			temp = "1" + receiveSerial()
+		}
+		c1 <- temp
+	}()
+	select {
+	case res := <-c1:
+		return res
+	case <-time.After(time.Second * 2):
+		log.Println("sendSrial Timeout")
 	}
-	res := receiveSerial()
-	if res == "1" {
-		res = "1" + receiveSerial()
-	}
-	return res
+	return temp
 }
 
 func receiveSerial() (recv string) {
@@ -101,7 +132,11 @@ func getSerialResponse(res string) {
 	res = strings.Replace(res, "\n", "#", -1)
 	res = strings.Replace(res, "\r", "#", -1)
 	res = strings.Replace(res, "##", "#", -1)
-
+	if !strings.Contains(res,":") {
+		log.Println("no response given")
+		Connected=false
+		return
+	}
 	temp2 = strings.Split(res, ":")
 	if len(temp2[1]) >= 2 {
 		result = append(result, temp2[0])
