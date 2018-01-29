@@ -1,5 +1,7 @@
 build/
+ToDo.txt
 moc*
+.idea/
 xmodem.c_back
 .DS_Store
 deploy/
