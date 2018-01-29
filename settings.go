@@ -1,6 +1,5 @@
 package main
 
-
 var populated = false
 var TagModes []string
 var TagButtons []string
@@ -16,11 +15,11 @@ func (d *devices) load() {
 	d.name = []string{"RevE-Rebooted", "RevG"}
 }
 
-
-//var SerialResponse serialResponse
+var SerialResponse  serialResponse
 type serialResponse struct {
-	Code int
-	String string
+	Cmd 	string
+	Code 	int
+	String 	string
 	Payload string
 }
 

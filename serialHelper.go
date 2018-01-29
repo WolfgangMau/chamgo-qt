@@ -42,10 +42,15 @@ func connectSerial(selSerialPort string) (err error) {
 	return nil
 }
 
-func serialCMD(cmd string) []string {
-	log.Print("-> " + cmd)
+func serialCMD(cmd string) {
+	//reset response-struct
+	SerialResponse.Cmd=cmd
+	SerialResponse.Code=-1
+	SerialResponse.String=""
+	SerialResponse.Payload=""
+
 	temp := sendSerial(cmd)
-	return responseSplit(temp)
+	getSerialResponse(temp)
 }
 
 func sendSerial(cmdStr string) string {
@@ -93,9 +98,8 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 
 //ToDo: implement structured response
-func responseSplit(res string) []string {
+func getSerialResponse(res string) {
 	var result []string
-	var SerialResponse  serialResponse
 	res = strings.Replace(res, "\n","#",-1)
 	res = strings.Replace(res, "\r","#",-1)
 	res = strings.Replace(res,"##","#",-1)
@@ -118,15 +122,8 @@ func responseSplit(res string) []string {
 				}
 			}
 		}
-		for i,s := range result {
-			log.Printf("result[%d] = %s\n",i,s)
-		}
 		dumpResp(SerialResponse)
-		return result
-	} else {
-		log.Printf("result has no reslutcode! %s\n",res)
 	}
-	return nil
 }
 
 func dumpResp(t serialResponse) {

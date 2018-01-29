@@ -3,13 +3,12 @@ package main
 import (
 	"github.com/therecipe/qt/widgets"
 	"log"
+	"strconv"
 )
 
 var (
 	serialSendButton   *widgets.QPushButton
 	serialMonitor      *widgets.QPlainTextEdit
-	serialResponseList []string
-	serialResponseStr  string
 )
 
 func serialTab() *widgets.QWidget {
@@ -66,12 +65,12 @@ func serialTab() *widgets.QWidget {
 				serialConnectButton.SetText("Disconnect")
 				serialSendButton.SetDisabled(false)
 				serialSendButton.Repaint()
-				serialResponseList = serialCMD(Commands.version + "?")
+				serialCMD(Commands.version + "?")
 
-				if serialResponseList[0] == "101" {
-					serialDeviceInfo.SetText("Connected\n" + deviceInfo(serialResponseList[2]))
+				if SerialResponse.Code == 101 {
+					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true
-					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(serialResponseList[2]), 0)
+					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
 					populateSlots()
 					checkCurrentSelection()
 
@@ -128,10 +127,13 @@ func serialTab() *widgets.QWidget {
 
 	serialSendButton.ConnectClicked(func(checked bool) {
 		if serialSendTxt.Text() != "" {
-			serialResponseStr = sendSerial(serialSendTxt.Text())
-			if serialResponseStr != "" {
-				serialMonitor.AppendPlainText("-> " + serialSendTxt.Text())
-				serialMonitor.AppendPlainText("<- " + serialResponseStr)
+			serialCMD(serialSendTxt.Text())
+			if SerialResponse.Payload != "" {
+				serialMonitor.AppendPlainText("-> " + SerialResponse.Cmd)
+				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code)+" "+SerialResponse.String)
+				if SerialResponse.Payload != ""  {
+					serialMonitor.AppendPlainText("<- " + SerialResponse.Payload)
+				}
 				serialMonitor.Repaint()
 			} else {
 				widgets.QMessageBox_Information(nil, "OK", "no Response for Cmd:\n"+serialSendTxt.Text(),

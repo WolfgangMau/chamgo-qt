@@ -61,10 +61,10 @@ func slotChecked(slot, state int) {
 	if state == 2 && Connected {
 		if Device == Devices.name[1] {
 			//RevG's first Slot is 1 and Last Slot is 8
-			temp2 = serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot+1))
+			serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot+1))
 		} else {
 			//RevE's first Slot is 0 and Last Slot is 7
-			temp2 = serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot))
+			serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot))
 		}
 	}
 	Slots[slot].slot.Repaint()
@@ -87,17 +87,17 @@ func applySlots() {
 			if Device == Devices.name[1]{
 				hardwareSlot=i+1
 			}
-			temp2 = serialCMD(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
+			serialCMD(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
 			//select slot
-			temp2 = serialCMD(Commands.config + "=" + s.mode.CurrentText())
+			serialCMD(Commands.config + "=" + s.mode.CurrentText())
 			//set mode
-			temp2 = serialCMD(Commands.config + "=" + s.mode.CurrentText())
+			serialCMD(Commands.config + "=" + s.mode.CurrentText())
 			//set uid
-			temp2 = serialCMD(Commands.uid + "=" + s.uid.Text())
+			serialCMD(Commands.uid + "=" + s.uid.Text())
 			//set  button short
-			temp2 = serialCMD(Commands.button + "=" + s.btns.CurrentText())
+			serialCMD(Commands.button + "=" + s.btns.CurrentText())
 			//set button long
-			temp2 = serialCMD(Commands.lbutton + "=" + s.btnl.CurrentText())
+			serialCMD(Commands.lbutton + "=" + s.btnl.CurrentText())
 		}
 	}
 }
@@ -173,8 +173,12 @@ func populateSlots() {
 		return
 	}
 	if populated == false {
-		TagModes = strings.Split(serialCMD(DeviceActions.getModes)[2],",")
-		TagButtons =  strings.Split(serialCMD(DeviceActions.getButtons)[2],",")
+		//ToDo: error-handling
+		serialCMD(DeviceActions.getModes)
+		TagModes = strings.Split(SerialResponse.Payload,",")
+		//ToDo: error-handling
+		serialCMD(DeviceActions.getButtons)
+		TagButtons =  strings.Split(SerialResponse.Payload,",")
 		//unselect all slots
 		buttonClicked(1)
 		populated = true
@@ -184,28 +188,34 @@ func populateSlots() {
 		s.slot.SetChecked(true)
 
 		//get slot uid
-		uid := serialCMD(DeviceActions.getUid)
+		serialCMD(DeviceActions.getUid)
+		uid := SerialResponse.Payload
 		//set uid to lineedit
-		s.uid.SetText(uid[2])
+		s.uid.SetText(uid)
 
-		size := serialCMD(DeviceActions.getSize)
-		s.size.SetText(size[2])
+		serialCMD(DeviceActions.getSize)
+		size := SerialResponse.Payload
 
-		mode := serialCMD(DeviceActions.getMode)
-		_, modeindex := getPosFromList(mode[2], TagModes)
+		s.size.SetText(size)
+
+		serialCMD(DeviceActions.getMode)
+		mode := SerialResponse.Payload
+		_, modeindex := getPosFromList(mode, TagModes)
 		s.mode.Clear()
 		s.mode.AddItems(TagModes)
 		s.mode.SetCurrentIndex(modeindex)
 
-		buttonl := serialCMD(DeviceActions.getButton)
-		_, buttonlindex := getPosFromList(buttonl[2], TagButtons)
+		serialCMD(DeviceActions.getButton)
+		buttonl := SerialResponse.Payload
+			_, buttonlindex := getPosFromList(buttonl, TagButtons)
 		s.btnl.Clear()
 		s.btnl.AddItems(TagButtons)
 		s.btnl.SetCurrentIndex(buttonlindex)
 
 		// ToDo: currently mostly faked - currently not implemented in my revG
-		buttons := serialCMD(DeviceActions.getButton)
-		_, buttonsindex := getPosFromList(buttons[2], TagButtons)
+		serialCMD(DeviceActions.getButton)
+		buttons := SerialResponse.Payload
+		_, buttonsindex := getPosFromList(buttons, TagButtons)
 		s.btns.Clear()
 		s.btns.AddItems(TagButtons)
 		s.btns.SetCurrentIndex(buttonsindex)
@@ -219,12 +229,13 @@ func checkCurrentSelection() {
 	var softSlot int
 	go func() {
 		for myTime = range GetSlotTicker.C {
-			selected := serialCMD(DeviceActions.selectedSlot)
+			serialCMD(DeviceActions.selectedSlot)
+			selected := SerialResponse.Payload
 			if Device == Devices.name[1] {
-				hardSlot, _ := strconv.Atoi(selected[2])
+				hardSlot, _ := strconv.Atoi(selected)
 				softSlot = hardSlot - 1
 			} else {
-				hardSlot, _ := strconv.Atoi(strings.Replace(selected[2], "NO.", "", 1))
+				hardSlot, _ := strconv.Atoi(strings.Replace(selected, "NO.", "", 1))
 				softSlot = hardSlot
 			}
 			log.Printf("Tick at %s - Current Selected Slot: %d\n\n", myTime, softSlot+1)
