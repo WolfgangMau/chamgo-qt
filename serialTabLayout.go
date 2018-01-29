@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	serialSendButton   *widgets.QPushButton
-	serialMonitor      *widgets.QPlainTextEdit
+	serialSendButton *widgets.QPushButton
+	serialMonitor    *widgets.QPlainTextEdit
 )
 
 func serialTab() *widgets.QWidget {
@@ -130,8 +130,8 @@ func serialTab() *widgets.QWidget {
 			sendSerialCmd(serialSendTxt.Text())
 			if SerialResponse.Payload != "" {
 				serialMonitor.AppendPlainText("-> " + SerialResponse.Cmd)
-				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code)+" "+SerialResponse.String)
-				if SerialResponse.Payload != ""  {
+				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code) + " " + SerialResponse.String)
+				if SerialResponse.Payload != "" {
 					serialMonitor.AppendPlainText("<- " + SerialResponse.Payload)
 				}
 				serialMonitor.Repaint()

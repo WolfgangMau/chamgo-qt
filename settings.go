@@ -15,11 +15,12 @@ func (d *devices) load() {
 	d.name = []string{"RevE-Rebooted", "RevG"}
 }
 
-var SerialResponse  serialResponse
+var SerialResponse serialResponse
+
 type serialResponse struct {
-	Cmd 	string
-	Code 	int
-	String 	string
+	Cmd     string
+	Code    int
+	String  string
 	Payload string
 }
 

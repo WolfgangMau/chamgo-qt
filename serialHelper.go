@@ -3,9 +3,9 @@ package main
 import (
 	"go.bug.st/serial.v1"
 	"log"
-	"strings"
-	"strconv"
 	"reflect"
+	"strconv"
+	"strings"
 )
 
 var serialPort serial.Port
@@ -44,10 +44,10 @@ func connectSerial(selSerialPort string) (err error) {
 
 func sendSerialCmd(cmd string) {
 	//reset response-struct
-	SerialResponse.Cmd=cmd
-	SerialResponse.Code=-1
-	SerialResponse.String=""
-	SerialResponse.Payload=""
+	SerialResponse.Cmd = cmd
+	SerialResponse.Code = -1
+	SerialResponse.String = ""
+	SerialResponse.Payload = ""
 
 	temp := sendSerial(cmd)
 	getSerialResponse(temp)
@@ -96,24 +96,23 @@ func deviceInfo(longInfo string) (shortInfo string) {
 	return
 }
 
-
 func getSerialResponse(res string) {
 	var result []string
-	res = strings.Replace(res, "\n","#",-1)
-	res = strings.Replace(res, "\r","#",-1)
-	res = strings.Replace(res,"##","#",-1)
+	res = strings.Replace(res, "\n", "#", -1)
+	res = strings.Replace(res, "\r", "#", -1)
+	res = strings.Replace(res, "##", "#", -1)
 
 	temp2 = strings.Split(res, ":")
 	if len(temp2[1]) >= 2 {
 		result = append(result, temp2[0])
-		SerialResponse.Code,_ = strconv.Atoi(temp2[0])
+		SerialResponse.Code, _ = strconv.Atoi(temp2[0])
 		temp := strings.Split(temp2[1], "#")
 		if len(temp) > 0 {
 			for i, s := range temp {
 				switch i {
-				case 0 :
+				case 0:
 					SerialResponse.String = s
-				case 1 :
+				case 1:
 					SerialResponse.Payload = s
 				}
 				if s != "" {

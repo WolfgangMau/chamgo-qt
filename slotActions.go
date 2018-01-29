@@ -84,10 +84,10 @@ func applySlots() {
 		if sel {
 			log.Printf("********************\nupdating %s\n", s.slotl.Text())
 			hardwareSlot := i
-			if Device == Devices.name[1]{
-				hardwareSlot=i+1
+			if Device == Devices.name[1] {
+				hardwareSlot = i + 1
 			}
-			sendSerialCmd(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			//select slot
 			sendSerialCmd(Commands.config + "=" + s.mode.CurrentText())
 			//set mode
@@ -175,10 +175,10 @@ func populateSlots() {
 	if populated == false {
 		//ToDo: error-handling
 		sendSerialCmd(DeviceActions.getModes)
-		TagModes = strings.Split(SerialResponse.Payload,",")
+		TagModes = strings.Split(SerialResponse.Payload, ",")
 		//ToDo: error-handling
 		sendSerialCmd(DeviceActions.getButtons)
-		TagButtons =  strings.Split(SerialResponse.Payload,",")
+		TagButtons = strings.Split(SerialResponse.Payload, ",")
 		//unselect all slots
 		buttonClicked(1)
 		populated = true
@@ -207,7 +207,7 @@ func populateSlots() {
 
 		sendSerialCmd(DeviceActions.getButton)
 		buttonl := SerialResponse.Payload
-			_, buttonlindex := getPosFromList(buttonl, TagButtons)
+		_, buttonlindex := getPosFromList(buttonl, TagButtons)
 		s.btnl.Clear()
 		s.btnl.AddItems(TagButtons)
 		s.btnl.SetCurrentIndex(buttonlindex)
