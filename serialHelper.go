@@ -42,7 +42,7 @@ func connectSerial(selSerialPort string) (err error) {
 	return nil
 }
 
-func serialCMD(cmd string) {
+func sendSerialCmd(cmd string) {
 	//reset response-struct
 	SerialResponse.Cmd=cmd
 	SerialResponse.Code=-1
@@ -97,7 +97,6 @@ func deviceInfo(longInfo string) (shortInfo string) {
 }
 
 
-//ToDo: implement structured response
 func getSerialResponse(res string) {
 	var result []string
 	res = strings.Replace(res, "\n","#",-1)

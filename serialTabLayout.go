@@ -65,7 +65,7 @@ func serialTab() *widgets.QWidget {
 				serialConnectButton.SetText("Disconnect")
 				serialSendButton.SetDisabled(false)
 				serialSendButton.Repaint()
-				serialCMD(Commands.version + "?")
+				sendSerialCmd(Commands.version + "?")
 
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
@@ -127,7 +127,7 @@ func serialTab() *widgets.QWidget {
 
 	serialSendButton.ConnectClicked(func(checked bool) {
 		if serialSendTxt.Text() != "" {
-			serialCMD(serialSendTxt.Text())
+			sendSerialCmd(serialSendTxt.Text())
 			if SerialResponse.Payload != "" {
 				serialMonitor.AppendPlainText("-> " + SerialResponse.Cmd)
 				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code)+" "+SerialResponse.String)

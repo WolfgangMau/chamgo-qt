@@ -61,10 +61,10 @@ func slotChecked(slot, state int) {
 	if state == 2 && Connected {
 		if Device == Devices.name[1] {
 			//RevG's first Slot is 1 and Last Slot is 8
-			serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot+1))
+			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot+1))
 		} else {
 			//RevE's first Slot is 0 and Last Slot is 7
-			serialCMD(DeviceActions.selectSlot + strconv.Itoa(slot))
+			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot))
 		}
 	}
 	Slots[slot].slot.Repaint()
@@ -87,17 +87,17 @@ func applySlots() {
 			if Device == Devices.name[1]{
 				hardwareSlot=i+1
 			}
-			serialCMD(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
 			//select slot
-			serialCMD(Commands.config + "=" + s.mode.CurrentText())
+			sendSerialCmd(Commands.config + "=" + s.mode.CurrentText())
 			//set mode
-			serialCMD(Commands.config + "=" + s.mode.CurrentText())
+			sendSerialCmd(Commands.config + "=" + s.mode.CurrentText())
 			//set uid
-			serialCMD(Commands.uid + "=" + s.uid.Text())
+			sendSerialCmd(Commands.uid + "=" + s.uid.Text())
 			//set  button short
-			serialCMD(Commands.button + "=" + s.btns.CurrentText())
+			sendSerialCmd(Commands.button + "=" + s.btns.CurrentText())
 			//set button long
-			serialCMD(Commands.lbutton + "=" + s.btnl.CurrentText())
+			sendSerialCmd(Commands.lbutton + "=" + s.btnl.CurrentText())
 		}
 	}
 }
@@ -174,10 +174,10 @@ func populateSlots() {
 	}
 	if populated == false {
 		//ToDo: error-handling
-		serialCMD(DeviceActions.getModes)
+		sendSerialCmd(DeviceActions.getModes)
 		TagModes = strings.Split(SerialResponse.Payload,",")
 		//ToDo: error-handling
-		serialCMD(DeviceActions.getButtons)
+		sendSerialCmd(DeviceActions.getButtons)
 		TagButtons =  strings.Split(SerialResponse.Payload,",")
 		//unselect all slots
 		buttonClicked(1)
@@ -188,24 +188,24 @@ func populateSlots() {
 		s.slot.SetChecked(true)
 
 		//get slot uid
-		serialCMD(DeviceActions.getUid)
+		sendSerialCmd(DeviceActions.getUid)
 		uid := SerialResponse.Payload
 		//set uid to lineedit
 		s.uid.SetText(uid)
 
-		serialCMD(DeviceActions.getSize)
+		sendSerialCmd(DeviceActions.getSize)
 		size := SerialResponse.Payload
 
 		s.size.SetText(size)
 
-		serialCMD(DeviceActions.getMode)
+		sendSerialCmd(DeviceActions.getMode)
 		mode := SerialResponse.Payload
 		_, modeindex := getPosFromList(mode, TagModes)
 		s.mode.Clear()
 		s.mode.AddItems(TagModes)
 		s.mode.SetCurrentIndex(modeindex)
 
-		serialCMD(DeviceActions.getButton)
+		sendSerialCmd(DeviceActions.getButton)
 		buttonl := SerialResponse.Payload
 			_, buttonlindex := getPosFromList(buttonl, TagButtons)
 		s.btnl.Clear()
@@ -213,7 +213,8 @@ func populateSlots() {
 		s.btnl.SetCurrentIndex(buttonlindex)
 
 		// ToDo: currently mostly faked - currently not implemented in my revG
-		serialCMD(DeviceActions.getButton)
+		//unlear about RButton & LButton short and long -> 4 scenarios?
+		sendSerialCmd(DeviceActions.getButton)
 		buttons := SerialResponse.Payload
 		_, buttonsindex := getPosFromList(buttons, TagButtons)
 		s.btns.Clear()
@@ -229,7 +230,7 @@ func checkCurrentSelection() {
 	var softSlot int
 	go func() {
 		for myTime = range GetSlotTicker.C {
-			serialCMD(DeviceActions.selectedSlot)
+			sendSerialCmd(DeviceActions.selectedSlot)
 			selected := SerialResponse.Payload
 			if Device == Devices.name[1] {
 				hardSlot, _ := strconv.Atoi(selected)
