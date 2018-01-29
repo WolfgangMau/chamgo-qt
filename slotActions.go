@@ -79,10 +79,17 @@ func selectAllSlots(b bool) {
 
 func applySlots() {
 	GetSlotTicker.Stop()
-	for _, s := range Slots {
+	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
 			log.Printf("********************\nupdating %s\n", s.slotl.Text())
+			hardwareSlot := i
+			if Device == Devices.name[1]{
+				hardwareSlot=i+1
+			}
+			temp2 = serialCMD(DeviceActions.selectSlot+strconv.Itoa(hardwareSlot))
+			//select slot
+			temp2 = serialCMD(Commands.config + "=" + s.mode.CurrentText())
 			//set mode
 			temp2 = serialCMD(Commands.config + "=" + s.mode.CurrentText())
 			//set uid

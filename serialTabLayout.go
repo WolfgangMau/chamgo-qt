@@ -71,7 +71,7 @@ func serialTab() *widgets.QWidget {
 				if serialResponseList[0] == "101" {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(serialResponseList[2]))
 					Connected = true
-					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(serialResponseList[0]), 0)
+					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(serialResponseList[2]), 0)
 					populateSlots()
 					checkCurrentSelection()
 
