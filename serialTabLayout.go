@@ -75,7 +75,7 @@ func serialTab() *widgets.QWidget {
 					Connected = true
 					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
 					populateSlots()
-					checkCurrentSelection()
+					//checkCurrentSelection()
 
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",
@@ -91,7 +91,8 @@ func serialTab() *widgets.QWidget {
 				serialDeviceInfo.SetText("not Connected")
 				Statusbar.ShowMessage("not Connected", 0)
 				Connected = false
-				GetSlotTicker.Stop()
+				serialPort.Close()
+				//GetSlotTicker.Stop()
 				log.Println("GetSlotTicker stopped")
 			}
 		}
@@ -131,7 +132,7 @@ func serialTab() *widgets.QWidget {
 	serialSendButton.ConnectClicked(func(checked bool) {
 		if serialSendTxt.Text() != "" {
 			sendSerialCmd(serialSendTxt.Text())
-			if SerialResponse.Payload != "" {
+			if SerialResponse.Code >= 100 {
 				serialMonitor.AppendPlainText("-> " + SerialResponse.Cmd)
 				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code) + " " + SerialResponse.String)
 				if SerialResponse.Payload != "" {
