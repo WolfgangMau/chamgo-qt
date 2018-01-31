@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/therecipe/qt/gui"
 	"github.com/therecipe/qt/widgets"
-	"log"
 	"strconv"
 )
 
@@ -45,7 +44,6 @@ var Slotlayouts [2]SlotHLayout
 var SlotHlayouts [8]SlotHLayout
 var SlotGroupVlayouts [8]SlotVLayout
 var Slotboxes [8]SlotBox
-var ActionButtons []string
 
 func allSlots() *widgets.QWidget {
 	bold := gui.NewQFont()
@@ -68,7 +66,6 @@ func allSlots() *widgets.QWidget {
 			SlotHlayouts[i].l.SetContentsMargins(10, 0, 0, 0)
 			SlotHlayouts[i].l.Stretch(1)
 
-			log.Printf("building Slot %d", c)
 			Slots[c].slotl = widgets.NewQLabel(nil, 0)
 
 			Slots[c].slotl.SetText("Slot " + strconv.Itoa(c+1))
@@ -138,7 +135,7 @@ func allSlots() *widgets.QWidget {
 		}
 	}
 
-	ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
+
 	abtnLayout := widgets.NewQGridLayout(nil)
 	for i, s := range ActionButtons {
 		AButtons[i].b = widgets.NewQPushButton2(s, nil)

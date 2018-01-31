@@ -5,14 +5,13 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"time"
 )
 
-var temp string
 var temp2 []string
-var myTime time.Time
 
-var GetSlotTicker *time.Ticker
+/*var temp string
+var myTime time.Time
+var GetSlotTicker *time.Ticker*/
 
 func buttonClicked(btn int) {
 
@@ -21,23 +20,23 @@ func buttonClicked(btn int) {
 	case "Select All":
 		selectAllSlots(true)
 		if populated {
-			GetSlotTicker.Stop()
+			//GetSlotTicker.Stop()
 		}
 
 	case "Select None":
 		selectAllSlots(false)
 		if populated {
-			GetSlotTicker.Stop()
+			//GetSlotTicker.Stop()
 		}
 
 	case "Apply":
-		applySlots()
+		applySlot()
 
 	case "Clear":
-		clearSlots()
+		clearSlot()
 
 	case "Refresh":
-		refreshSlots()
+		refreshSlot()
 
 	case "Set Active":
 		activateSlots()
@@ -77,11 +76,10 @@ func selectAllSlots(b bool) {
 	}
 }
 
-func applySlots() {
-	GetSlotTicker.Stop()
+func applySlot() {
+	//GetSlotTicker.Stop()
 	for i, s := range Slots {
-		sel := s.slot.IsChecked()
-		if sel {
+		if s.slot.IsChecked() {
 			log.Printf("********************\nupdating %s\n", s.slotl.Text())
 			hardwareSlot := i
 			if Device == Devices.name[1] {
@@ -102,7 +100,7 @@ func applySlots() {
 	}
 }
 
-func clearSlots() {
+func clearSlot() {
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
@@ -111,15 +109,7 @@ func clearSlots() {
 	}
 }
 
-func refreshSlots() {
-	//for i,s := range Slots {
-	//	sel := s.slot.IsChecked()
-	//	if sel {
-	//		log.Printf("I should probably refresh settings to Slot %d\n", i)
-	//	}
-	//}
-	// ToDo: bug! - curerently the first run has a offset - on the second run it looks OK
-	populateSlots()
+func refreshSlot() {
 	populateSlots()
 }
 
@@ -179,79 +169,87 @@ func populateSlots() {
 		//ToDo: error-handling
 		sendSerialCmd(DeviceActions.getButtons)
 		TagButtons = strings.Split(SerialResponse.Payload, ",")
-		//unselect all slots
-		buttonClicked(1)
 		populated = true
 	}
-	for _, s := range Slots {
-		//select single slot
-		s.slot.SetChecked(true)
 
-		//get slot uid
-		sendSerialCmd(DeviceActions.getUid)
-		uid := SerialResponse.Payload
-		//set uid to lineedit
-		s.uid.SetText(uid)
+	softSlot:=0
+	for sn, s := range Slots {
+		//update single slot
+		if s.slot.IsChecked() {
+			if Device == Devices.name[1] {
+				softSlot = sn + 1
+			} else {
+				softSlot = sn
+			}
 
-		sendSerialCmd(DeviceActions.getSize)
-		size := SerialResponse.Payload
+			sendSerialCmd(DeviceActions.selectSlot+strconv.Itoa(softSlot))
+			//get slot uid
+			sendSerialCmd(DeviceActions.getUid)
+			uid := SerialResponse.Payload
+			//set uid to lineedit
+			s.uid.SetText(uid)
 
-		s.size.SetText(size)
+			sendSerialCmd(DeviceActions.getSize)
+			size := SerialResponse.Payload
 
-		sendSerialCmd(DeviceActions.getMode)
-		mode := SerialResponse.Payload
-		_, modeindex := getPosFromList(mode, TagModes)
-		s.mode.Clear()
-		s.mode.AddItems(TagModes)
-		s.mode.SetCurrentIndex(modeindex)
+			s.size.SetText(size)
 
-		sendSerialCmd(DeviceActions.getButton)
-		buttonl := SerialResponse.Payload
-		_, buttonlindex := getPosFromList(buttonl, TagButtons)
-		s.btnl.Clear()
-		s.btnl.AddItems(TagButtons)
-		s.btnl.SetCurrentIndex(buttonlindex)
+			sendSerialCmd(DeviceActions.getMode)
+			mode := SerialResponse.Payload
+			_, modeindex := getPosFromList(mode, TagModes)
+			s.mode.Clear()
+			s.mode.AddItems(TagModes)
+			s.mode.SetCurrentIndex(modeindex)
+			s.mode.Repaint()
 
-		// ToDo: currently mostly faked - currently not implemented in my revG
-		//unlear about RButton & LButton short and long -> 4 scenarios?
-		sendSerialCmd(DeviceActions.getButton)
-		buttons := SerialResponse.Payload
-		_, buttonsindex := getPosFromList(buttons, TagButtons)
-		s.btns.Clear()
-		s.btns.AddItems(TagButtons)
-		s.btns.SetCurrentIndex(buttonsindex)
+			sendSerialCmd(DeviceActions.getButton)
+			buttonl := SerialResponse.Payload
+			_, buttonlindex := getPosFromList(buttonl, TagButtons)
+			s.btnl.Clear()
+			s.btnl.AddItems(TagButtons)
+			s.btnl.SetCurrentIndex(buttonlindex)
+			s.btnl.Repaint()
 
-		s.slot.SetChecked(false)
+			// ToDo: currently mostly faked - currently not implemented in my revG
+			//unlear about RButton & LButton short and long -> 4 scenarios?
+			sendSerialCmd(DeviceActions.getButton)
+			buttons := SerialResponse.Payload
+			_, buttonsindex := getPosFromList(buttons, TagButtons)
+			s.btns.Clear()
+			s.btns.AddItems(TagButtons)
+			s.btns.SetCurrentIndex(buttonsindex)
+			s.btns.Repaint()
+		}
 	}
 }
-
-func checkCurrentSelection() {
-	GetSlotTicker = time.NewTicker(time.Millisecond * 2000)
-	var softSlot int
-	go func() {
-		for myTime = range GetSlotTicker.C {
-			sendSerialCmd(DeviceActions.selectedSlot)
-			selected := SerialResponse.Payload
-			if Device == Devices.name[1] {
-				hardSlot, _ := strconv.Atoi(selected)
-				softSlot = hardSlot - 1
-			} else {
-				hardSlot, _ := strconv.Atoi(strings.Replace(selected, "NO.", "", 1))
-				softSlot = hardSlot
-			}
-			log.Printf("Tick at %s - Current Selected Slot: %d\n\n", myTime, softSlot+1)
-			for i, s := range Slots {
-				if s.slot.IsChecked() && i != softSlot {
-					s.slot.SetChecked(false)
-				} else {
-					if !s.slot.IsChecked() && i == softSlot && populated {
-						s.slot.SetChecked(true)
-					}
-				}
-			}
-		}
-	}()
-}
+//
+//func checkCurrentSelection() {
+//	GetSlotTicker = time.NewTicker(time.Millisecond * 2000)
+//	var softSlot int
+//	go func() {
+//		for myTime = range GetSlotTicker.C {
+//			sendSerialCmd(DeviceActions.selectedSlot)
+//			selected := SerialResponse.Payload
+//			if Device == Devices.name[1] {
+//				hardSlot, _ := strconv.Atoi(selected)
+//				softSlot = hardSlot - 1
+//			} else {
+//				hardSlot, _ := strconv.Atoi(strings.Replace(selected, "NO.", "", 1))
+//				softSlot = hardSlot
+//			}
+//			log.Printf("Tick at %s - Current Selected Slot: %d\n\n", myTime, softSlot+1)
+//			for i, s := range Slots {
+//				if s.slot.IsChecked() && i != softSlot {
+//					s.slot.SetChecked(false)
+//				} else {
+//					if !s.slot.IsChecked() && i == softSlot && populated {
+//						s.slot.SetChecked(true)
+//					}
+//				}
+//			}
+//		}
+//	}()
+//}
 
 func getPosFromList(val string, array []string) (exists bool, index int) {
 	exists = false

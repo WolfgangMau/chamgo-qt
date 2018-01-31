@@ -1,5 +1,8 @@
 [submodule "vendor/go.bug.st/serial.v1"]
 	path = vendor/go.bug.st/serial.v1
+	url = https://go.bug.st/git/serial.v1/enumerator.git
+[submodule "vendor/go.bug.st/serial.v1/enumerator"]
+	path = vendor/go.bug.st/serial.v1/enumerator
 	url = https://go.bug.st/git/serial.v1.git
 [submodule "vendor/github.com/creack/goselect"]
 	path = vendor/github.com/creack/goselect

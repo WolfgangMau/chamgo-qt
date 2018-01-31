@@ -5,15 +5,12 @@ import (
 	"log"
 	"strconv"
 )
-
 var (
 	serialSendButton *widgets.QPushButton
 	serialMonitor    *widgets.QPlainTextEdit
 )
 
 func serialTab() *widgets.QWidget {
-
-	Devices.load()
 
 	serialTabLayout := widgets.NewQHBoxLayout()
 	serialTabPage := widgets.NewQWidget(nil, 0)
@@ -28,10 +25,12 @@ func serialTab() *widgets.QWidget {
 	deviceSelect.AddItems(Devices.name)
 	deviceSelect.SetCurrentIndex(0)
 	deviceSelect.SetFixedWidth(160)
+	deviceSelect.SetCurrentIndex(SelectedDeviceId)
 
 	serialPortSelect := widgets.NewQComboBox(nil)
 	serialPortSelect.AddItems(serialPorts)
 	serialPortSelect.SetFixedWidth(160)
+	serialPortSelect.SetCurrentIndex(SelectedPortId)
 
 	serialConnectButton := widgets.NewQPushButton2("Connect", nil)
 
@@ -73,9 +72,10 @@ func serialTab() *widgets.QWidget {
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true
-					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Device+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
-					populateSlots()
-					checkCurrentSelection()
+					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Devices.cdc[SelectedDeviceId]+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
+					buttonClicked(0)
+					buttonClicked(4)
+					buttonClicked(1)
 
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",
@@ -91,7 +91,8 @@ func serialTab() *widgets.QWidget {
 				serialDeviceInfo.SetText("not Connected")
 				Statusbar.ShowMessage("not Connected", 0)
 				Connected = false
-				GetSlotTicker.Stop()
+				serialPort.Close()
+				//GetSlotTicker.Stop()
 				log.Println("GetSlotTicker stopped")
 			}
 		}
@@ -131,7 +132,7 @@ func serialTab() *widgets.QWidget {
 	serialSendButton.ConnectClicked(func(checked bool) {
 		if serialSendTxt.Text() != "" {
 			sendSerialCmd(serialSendTxt.Text())
-			if SerialResponse.Payload != "" {
+			if SerialResponse.Code >= 100 {
 				serialMonitor.AppendPlainText("-> " + SerialResponse.Cmd)
 				serialMonitor.AppendPlainText("<- " + strconv.Itoa(SerialResponse.Code) + " " + SerialResponse.String)
 				if SerialResponse.Payload != "" {
