@@ -11,6 +11,8 @@ var Statusbar *widgets.QStatusBar
 
 func main() {
 	Connected = false
+	ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
+
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
 	window := widgets.NewQMainWindow(nil, 0)

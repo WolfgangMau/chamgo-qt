@@ -8,12 +8,21 @@ var Device string
 var Devices devices
 
 type devices struct {
-	name []string
+	name 	 	[]string
+	vendorId 	[]string
+	productId	[]string
+	cdc			[]string
 }
 
+//ToDo: use map map[string][string}
 func (d *devices) load() {
-	d.name = []string{"RevE-Rebooted", "RevG"}
+	d.name 		= []string{"RevE-Rebooted", "RevG"}
+	d.vendorId 	= []string{"03eb","16d0"}
+	d.productId = []string{"2044","04b2"}
+	d.cdc		= []string{"Atmel Corporation LUFA CDC","KAOS Chameleon-Mini"}
 }
+
+var ActionButtons []string
 
 var SerialResponse serialResponse
 
