@@ -6,11 +6,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"os/exec"
-	"bytes"
-	"time"
-	"path/filepath"
 	"os"
+	"io/ioutil"
 )
 
 var temp2 []string
@@ -137,6 +134,15 @@ func mfkey32Slots() {
 	}
 }
 
+type packet struct {
+	proto byte
+	block int
+	rblocks int
+	data  []byte
+	chk   byte
+}
+
+
 func uploadSlots() {
 	var filename string
 	fileSelect := widgets.NewQFileDialog(nil, 0)
@@ -146,23 +152,79 @@ func uploadSlots() {
 		sel := s.slot.IsChecked()
 		if sel {
 			log.Printf("I should probably upoload %s to Slot %d\n", filename, i)
+			/**
+							XMODEM 128 byte blocks
+							----------------------
+				SENDER                                      RECEIVER
+														<-- NAK
+				SOH 01 FE Data[128] CSUM                -->
+														<-- ACK
+				SOH 02 FD Data[128] CSUM                -->
+														<-- ACK
+				SOH 03 FC Data[128] CSUM                -->
+														<-- ACK
+				SOH 04 FB Data[128] CSUM                -->
+														<-- ACK
+				SOH 05 FA Data[100] CPMEOF[28] CSUM     -->
+														<-- ACK
+				EOT                                     -->
+														<-- ACK
+
+			>>> csum = modem.calc_checksum('hello')
+			>>> csum = modem.calc_checksum('world', csum)
+			>>> hex(csum)
+			'0x3c'
+
+			package main
+			import (
+				"fmt"
+			)
+
+			func main() {
+				var my []byte
+				my = []byte("helloworld")
+				c := byte(0)
+				for _,b := range my {
+					c = c+b
+				}
+				fmt.Printf("chk: 0x%x\n", c)
+			}
+			 */
 			////send file
 			//
 			//
 			//// Open file
-			//log.Printf("loading file %s\n", filename)
-			//fIn, err := os.Open(filename)
-			//if err != nil {
-			//	log.Fatalln(err)
-			//}
+			log.Printf("loading file %s\n", filename)
+			fIn, err := os.Open(filename)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			data, err := ioutil.ReadAll(fIn)
+			if err != nil {
+				log.Println(err)
+			}
+			fIn.Close()
+
+			var p []packet
+			var p1 packet
+			for _,d := range data {
+				//temp := byte(d)
+					//temp := byte(d)
+					p1.data = append(p1.data, d)
+
+					if len(p1.data) == 128 {
+						p1.proto = 0x01
+						p1.block = len(p)
+						p1.rblocks = 255-len(p)
+						p1.chk = checksum(p1.data, 0)
+						p = append(p, p1)
+						p1.data=[]byte("")
+					}
+			}
+			log.Printf("packets : %d  -  dataLen: %d\n", len(p), len(p[0].data) )
 			//
-			//data, err := ioutil.ReadAll(fIn)
-			//if err != nil {
-			//	log.Println(err)
-			//}
-			//fIn.Close()
-			//
-			sendSerialCmd(DeviceActions.startUpload)
+			//sendSerialCmd(DeviceActions.startUpload)
 			//err = serialPort.Close()
 			//if err != nil {
 			//	log.Println(err)
@@ -183,31 +245,38 @@ func uploadSlots() {
 			//if err != nil {
 			//	log.Println(err)
 			//}
-			err := serialPort.Close()
-			if err != nil {
-				log.Println(err)
-			}
+			//err := serialPort.Close()
+			//if err != nil {
+			//	log.Println(err)
+			//}
 			//log.Println(filename, "sent successful")
 			//ex, err := os.Executable()
 			//if err != nil {
 			//	panic(err)
 			//}
-			dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-			time.Sleep(time.Second * 1)
-			cmd := exec.Command(dir+string(os.PathSeparator)+"xmutil", SerialDevice1, filename)
-			var out bytes.Buffer
-			cmd.Stdout = &out
-			err = cmd.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			time.Sleep(time.Millisecond * 100)
-			err = connectSerial(SerialDevice1)
-			if err != nil {
-				log.Println(err)
-			}
+			//dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+			//time.Sleep(time.Second * 1)
+			//cmd := exec.Command(dir+string(os.PathSeparator)+"xmutil", SerialDevice1, filename)
+			//var out bytes.Buffer
+			//cmd.Stdout = &out
+			//err = cmd.Run()
+			//if err != nil {
+			//	log.Fatal(err)
+			//}
+			//time.Sleep(time.Millisecond * 100)
+			//err = connectSerial(SerialDevice1)
+			//if err != nil {
+			//	log.Println(err)
+			//}
 		}
 	}
+}
+
+func  checksum(b []byte, cs byte) byte {
+	for _,d := range b {
+		cs = cs + d
+	}
+	return cs
 }
 
 func downloadSlots() {
