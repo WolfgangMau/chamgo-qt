@@ -85,7 +85,7 @@ func (c *commands) load(device string) {
 		c.config = "CONFIGMY"
 		c.uid = "UIDMY"
 		c.readonly = "READONLYMY"
-		c.upgrade = "UPLOADMY"
+		c.upload = "UPLOADMY"
 		c.download = "DOWNLOADMY"
 		c.reset = "RESETMY"
 		c.upgrade = "UPGRADEMY"
@@ -104,7 +104,7 @@ func (c *commands) load(device string) {
 		c.config = "CONFIG"
 		c.uid = "UID"
 		c.readonly = "READONLY"
-		c.upgrade = "UPLOAD"
+		c.upload = "UPLOAD"
 		c.download = "DOWNLOAD"
 		c.reset = "RESET"
 		c.upgrade = "UPGRADE"
@@ -157,6 +157,7 @@ type deviceActions struct {
 	selectSlot   string
 	selectedSlot string
 	clearSlot    string
+	startUpload	 string
 }
 
 func (d *deviceActions) load(device string) {
@@ -174,6 +175,8 @@ func (d *deviceActions) load(device string) {
 		d.selectSlot = Commands.setting + "="
 		d.selectedSlot = Commands.setting + "?"
 
+		d.startUpload = Commands.upload
+
 	case "RevG":
 		d.getModes = Commands.config + "=?"
 		d.getButtons = Commands.button + "=?"
@@ -185,5 +188,6 @@ func (d *deviceActions) load(device string) {
 
 		d.selectSlot = Commands.setting + "="
 		d.selectedSlot = Commands.setting + "?"
+		d.startUpload = Commands.upload
 	}
 }

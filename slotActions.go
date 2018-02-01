@@ -2,9 +2,15 @@ package main
 
 import (
 	"github.com/therecipe/qt/widgets"
+	//"github.com/chrizzzzz/go-xmodem/xmodem"
 	"log"
 	"strconv"
 	"strings"
+	"os/exec"
+	"bytes"
+	"time"
+	"path/filepath"
+	"os"
 )
 
 var temp2 []string
@@ -140,6 +146,66 @@ func uploadSlots() {
 		sel := s.slot.IsChecked()
 		if sel {
 			log.Printf("I should probably upoload %s to Slot %d\n", filename, i)
+			////send file
+			//
+			//
+			//// Open file
+			//log.Printf("loading file %s\n", filename)
+			//fIn, err := os.Open(filename)
+			//if err != nil {
+			//	log.Fatalln(err)
+			//}
+			//
+			//data, err := ioutil.ReadAll(fIn)
+			//if err != nil {
+			//	log.Println(err)
+			//}
+			//fIn.Close()
+			//
+			sendSerialCmd(DeviceActions.startUpload)
+			//err = serialPort.Close()
+			//if err != nil {
+			//	log.Println(err)
+			//}
+			//log.Println("port closed")
+			//err = connectSerial(SerialDevice1)
+			//if err != nil {
+			//	log.Println(err)
+			//}
+			//log.Println("port opend")
+			//
+			//log.Println(filename, "start upload")
+			//// Send file
+			//var pl []byte
+			//xmodem.SendBlock(serialPort,0, pl, 1)
+			//err = xmodem.ModemSend(serialPort, data)
+			//log.Println(filename, "finished upload")
+			//if err != nil {
+			//	log.Println(err)
+			//}
+			err := serialPort.Close()
+			if err != nil {
+				log.Println(err)
+			}
+			//log.Println(filename, "sent successful")
+			//ex, err := os.Executable()
+			//if err != nil {
+			//	panic(err)
+			//}
+			dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+			time.Sleep(time.Second * 1)
+			cmd := exec.Command(dir+string(os.PathSeparator)+"xmutil", SerialDevice1, filename)
+			var out bytes.Buffer
+			cmd.Stdout = &out
+			err = cmd.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			time.Sleep(time.Millisecond * 100)
+			err = connectSerial(SerialDevice1)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
@@ -265,3 +331,4 @@ func getPosFromList(val string, array []string) (exists bool, index int) {
 
 	return
 }
+

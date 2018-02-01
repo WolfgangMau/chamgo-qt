@@ -8,6 +8,7 @@ import (
 var (
 	serialSendButton *widgets.QPushButton
 	serialMonitor    *widgets.QPlainTextEdit
+
 )
 
 func serialTab() *widgets.QWidget {
@@ -53,7 +54,8 @@ func serialTab() *widgets.QWidget {
 		Commands.load(deviceSelect.CurrentText())
 
 		if serialConnectButton.Text() == "Connect" {
-			err := connectSerial(serialPortSelect.CurrentText())
+
+			err := connectSerial(SerialDevice1)
 			if err != nil {
 				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial",
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)

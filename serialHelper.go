@@ -15,6 +15,8 @@ var serialPort serial.Port
 var SelectedPortId int
 var SelectedDeviceId int
 
+var SerialDevice1 string
+
 func getSerialPorts() (usbports[]string, perr error) {
 	Devices.load()
 	ports2,err := enumerator.GetDetailedPortsList()
@@ -41,9 +43,10 @@ func getSerialPorts() (usbports[]string, perr error) {
 			usbports = append(usbports, port.Name)
 			for di,d  := range Devices.vendorId {
 				if strings.ToLower(port.VID) == strings.ToLower(d) && strings.ToLower(port.PID) == strings.ToLower(Devices.productId[di]) {
-					log.Printf("detected Device: %s\n",Devices.cdc[di])
+					log.Printf("detected Device: %s\nportName: %s\n",Devices.cdc[di], port.Name)
 					SelectedPortId = len(usbports)-1
 					SelectedDeviceId = di
+					SerialDevice1 = port.Name
 				}
 			}
 		}
