@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+
+var myProgressBar progressBar
+type progressBar struct {
+	widget *widgets.QProgressBar
+}
 type Slot struct {
 	widgets.QMainWindow
 	slotl *widgets.QLabel
@@ -143,9 +148,11 @@ func allSlots() *widgets.QWidget {
 	}
 	AButtonGroup := widgets.NewQGroupBox2("Available Actions", nil)
 	AButtonGroup.SetLayout(abtnLayout)
+
 	A2ButtonLayout := widgets.NewQHBoxLayout()
-	A2ButtonLayout.AddWidget(AButtonGroup, 1, 0x0001)
-	slotsTabLayout.AddLayout2(A2ButtonLayout, 3, 0, 1, 5, 0x0001)
+	A2ButtonLayout.AddWidget(AButtonGroup, 0, 0x0004)
+	slotsTabLayout.AddLayout2(A2ButtonLayout, 3, 0, 1, 4, 0x0004)
+
 
 	//for i:=0; i<len(Slots); i++ {
 	//	Slots[c].slot.ConnectStateChanged(func(checked int) {

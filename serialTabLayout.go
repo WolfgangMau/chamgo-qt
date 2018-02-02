@@ -96,6 +96,7 @@ func serialTab() *widgets.QWidget {
 				serialPort.Close()
 				//GetSlotTicker.Stop()
 				log.Println("GetSlotTicker stopped")
+				myProgressBar.zero()
 			}
 		}
 
@@ -108,7 +109,7 @@ func serialTab() *widgets.QWidget {
 
 	serialMonitor = widgets.NewQPlainTextEdit(nil)
 	serialMonitor.AppendPlainText("")
-	serialMonitor.SetFixedHeight(400)
+	serialMonitor.SetFixedHeight(380)
 	serialMonitor.SetReadOnly(true)
 
 	serialSendButton = widgets.NewQPushButton2("send", nil)

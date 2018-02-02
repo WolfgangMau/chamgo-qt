@@ -30,10 +30,16 @@ func main() {
 	mainlayout.AddWidget(tabWidget, 0, 0x0020)
 	mainlayout.SetAlign(33)
 
+	myProgressBar.widget = widgets.NewQProgressBar(window)
+	myProgressBar.widget.SetRange(0,100)
+	myProgressBar.widget.SetVisible(true)
+	myProgressBar.widget.ShowDefault()
+	mainlayout.AddWidget(myProgressBar.widget, 0, 0x0020)
+
 	mainWidget := widgets.NewQWidget(nil, 0)
 	mainWidget.SetLayout(mainlayout)
-
 	window.SetCentralWidget(mainWidget)
+
 	Statusbar = widgets.NewQStatusBar(window)
 	Statusbar.ShowMessage("not Connected", 0)
 	window.SetStatusBar(Statusbar)
