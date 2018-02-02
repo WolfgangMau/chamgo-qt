@@ -8,6 +8,7 @@ import (
 	"strings"
 	"os"
 	"io/ioutil"
+	"time"
 )
 
 var temp2 []string
@@ -54,7 +55,7 @@ func buttonClicked(btn int) {
 		downloadSlots()
 
 	default:
-		log.Printf("Clicked on Button %s\n", ActionButtons[btn])
+		log.Printf("clicked on Button %s\n", ActionButtons[btn])
 	}
 }
 
@@ -101,15 +102,35 @@ func applySlot() {
 			sendSerialCmd(Commands.lbutton + "=" + s.btnl.CurrentText())
 		}
 	}
+	populateSlots()
+}
+
+func countSelected() int {
+	c:=0
+	for _, s := range Slots {
+		if s.slot.IsChecked() {
+			c++
+		}
+	}
+	return c
 }
 
 func clearSlot() {
+	c1:=0
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			log.Printf("I should probably clear settings to Slot %d\n", i)
+			c1++
+			log.Printf("********************\nclearing %s\n", s.slotl.Text())
+			hardwareSlot := i
+			if Device == Devices.name[1] {
+				hardwareSlot = i + 1
+			}
+			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.clearSlot)
 		}
 	}
+	populateSlots()
 }
 
 func refreshSlot() {
@@ -147,10 +168,19 @@ func uploadSlots() {
 	var filename string
 	fileSelect := widgets.NewQFileDialog(nil, 0)
 	filename = fileSelect.GetOpenFileName(nil, "open Dump", "", "", "", fileSelect.Options())
+    if filename == ""{
+    	log.Println("no file selöeted")
+    	return
+	}
 
 	for i, s := range Slots {
-		sel := s.slot.IsChecked()
-		if sel {
+		if s.slot.IsChecked() {
+			log.Printf("********************\nupdating %s\n", s.slotl.Text())
+			hardwareSlot := i
+			if Device == Devices.name[1] {
+				hardwareSlot = i + 1
+			}
+			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			log.Printf("I should probably upoload %s to Slot %d\n", filename, i)
 			/**
 							XMODEM 128 byte blocks
@@ -170,36 +200,29 @@ func uploadSlots() {
 				EOT                                     -->
 														<-- ACK
 
-			>>> csum = modem.calc_checksum('hello')
-			>>> csum = modem.calc_checksum('world', csum)
-			>>> hex(csum)
-			'0x3c'
-
-			package main
-			import (
-				"fmt"
-			)
-
-			func main() {
-				var my []byte
-				my = []byte("helloworld")
-				c := byte(0)
-				for _,b := range my {
-					c = c+b
-				}
-				fmt.Printf("chk: 0x%x\n", c)
-			}
 			 */
-			////send file
-			//
-			//
-			//// Open file
+
+			 // very basic implementation of a xmodem-sender of mine
+			 // buggy on windows32 (uploads, but no feedback - app freezes
+			 // because the chameleon is not stopping from xmodem-receiver-mode)
+			 // the usb-device must be removed to cut connection
+			 // but works mostly on osx an linux ...
+			 // the lack of responses is the most problesm, since I was able to get
+			 // a bi-directional data-exchange working (I don't get a NAK, ACK from receiver)
+			 // so just a 'fire and forget' mission for the data, but mostly it works
+			 // ToDo: needs to be tested with other serial libs - reader is needed for download also!
+			 // ToDo: in order to get closer to the xmodem specification:
+			 // 	- fill eventually 'not filled' data-blocks with EOF's
+			 // 	- retry (10 times) on transmision-failure -> (blocked by bi-direction-issue)
+			 //     - make a library out of it
+
+			// Open file
 			log.Printf("loading file %s\n", filename)
 			fIn, err := os.Open(filename)
 			if err != nil {
 				log.Fatalln(err)
 			}
-
+			//readfile into buffer
 			data, err := ioutil.ReadAll(fIn)
 			if err != nil {
 				log.Println(err)
@@ -208,6 +231,7 @@ func uploadSlots() {
 
 			var p []packet
 			var p1 packet
+			//build 128byte packages (works at this stage only for 1k and 4k)
 			for _,d := range data {
 				//temp := byte(d)
 					//temp := byte(d)
@@ -222,54 +246,120 @@ func uploadSlots() {
 						p1.data=[]byte("")
 					}
 			}
-			log.Printf("packets : %d  -  dataLen: %d\n", len(p), len(p[0].data) )
-			//
-			//sendSerialCmd(DeviceActions.startUpload)
-			//err = serialPort.Close()
+
+			//set chameleon into receiver-mode
+			sendSerialCmd(DeviceActions.startUpload)
+
+			//re-establish a fresh connection
+			err = serialPort.Close()
+			if err != nil {
+				log.Println(err)
+			}
+			time.Sleep(time.Millisecond * 200)
+			err = connectSerial(SerialDevice1)
+			if err != nil {
+				log.Println(err)
+			}
+			time.Sleep(time.Millisecond * 500)
+			// send NAK byte
+			//var nak []byte
+			//nak = append(nak,0x06)
+			//_,err = serialPort.Write(nak)
+
+
+			// send ACK byte
+			//var ack []byte
+			//ack = append(ack,0x15)
+			//_,err = serialPort.Write(ack)
+
+			//send all packets
+			//all:=len(p)
+			//myProgressBar.widget.SetStatusTip("uploadiong file "+filename)
+			//myProgressBar.widget.SetRange(0,all)
+			for _,sp := range p {
+				sendPacket(sp)
+				time.Sleep(time.Millisecond * 25)
+				//myProgressBar.update(i)
+			}
+		    log.Println("upload done")
+
+			//send EOF byte
+			//var eof []byte
+			//eof = append(eof,0x1a)
+			//_,err = serialPort.Write(eof)
 			//if err != nil {
 			//	log.Println(err)
 			//}
-			//log.Println("port closed")
-			//err = connectSerial(SerialDevice1)
-			//if err != nil {
-			//	log.Println(err)
+
+
+		    //send EOT byte
+			var eot []byte
+			eot = append(eot,0x04)
+			serialPort.Write(eot)
+
+			time.Sleep(time.Millisecond * 100)
+			serialPort.Write(eot)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			//send CAN byte
+			//var can []byte
+			//can = append(can,0x18)
+			//_,err = serialPort.Write(can)
+
+			//for i2:=0; i2< 10; i2++ {
+			//	for i:=0; i<131; i++ {
+			//		serialPort.Write(can)
+			//	}
 			//}
-			//log.Println("port opend")
-			//
-			//log.Println(filename, "start upload")
-			//// Send file
-			//var pl []byte
-			//xmodem.SendBlock(serialPort,0, pl, 1)
-			//err = xmodem.ModemSend(serialPort, data)
-			//log.Println(filename, "finished upload")
-			//if err != nil {
-			//	log.Println(err)
-			//}
-			//err := serialPort.Close()
-			//if err != nil {
-			//	log.Println(err)
-			//}
-			//log.Println(filename, "sent successful")
-			//ex, err := os.Executable()
-			//if err != nil {
-			//	panic(err)
-			//}
-			//dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-			//time.Sleep(time.Second * 1)
-			//cmd := exec.Command(dir+string(os.PathSeparator)+"xmutil", SerialDevice1, filename)
-			//var out bytes.Buffer
-			//cmd.Stdout = &out
-			//err = cmd.Run()
-			//if err != nil {
-			//	log.Fatal(err)
-			//}
-			//time.Sleep(time.Millisecond * 100)
-			//err = connectSerial(SerialDevice1)
-			//if err != nil {
-			//	log.Println(err)
-			//}
+
+			//clear up serial buffers ...
+			//serialPort.ResetOutputBuffer()
+			//serialPort.ResetInputBuffer()
+
+			//close serial
+			err = serialPort.Close()
+			if err != nil {
+				log.Println(err)
+			}
+			//start serial and cut xmodem-receiver (again 4 windows)
+			//myProgressBar.update(all)
+
+			err = connectSerial(SerialDevice1)
+			if err != nil {
+				log.Println(err)
+			}
+
+			populateSlots()
 		}
 	}
+}
+
+func sendPacket(p packet){
+
+	var sp []byte
+	sp = append(sp, p.proto)
+	sp = append(sp, byte(p.block)+1)
+	sp = append(sp, byte(byte(255)-byte(p.block)-1))
+	for _,b := range p.data {
+		sp = append(sp, b)
+	}
+	sp = append(sp, p.chk)
+	serialPort.Write(sp)
+
+	//time.Sleep(time.Millisecond * 10)
+	var resp []byte
+	//time.Sleep(time.Millisecond * 100)
+	i, err := serialPort.Read(resp)
+	if err != nil {
+		log.Println(err)
+	}
+	if len(resp)>0 {
+		log.Printf("got response from receiver: %x (%d)\n", resp,i)
+	}
+
 }
 
 func  checksum(b []byte, cs byte) byte {
@@ -283,11 +373,15 @@ func downloadSlots() {
 	var filename string
 	fileSelect := widgets.NewQFileDialog(nil, 0)
 	filename = fileSelect.GetOpenFileName(nil, "save Dump", "", "", "", fileSelect.Options())
+	if filename == ""{
+		log.Println("no file selöeted")
+		return
+	}
 
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			log.Printf("I should probably download a dump from Slot %d into file %s\n", i, filename)
+			log.Printf("should probably download a dump from Slot %d into file %s\n", i, filename)
 		}
 	}
 
@@ -297,6 +391,7 @@ func populateSlots() {
 	if !Connected {
 		return
 	}
+
 	if populated == false {
 		//ToDo: error-handling
 		sendSerialCmd(DeviceActions.getModes)
@@ -307,10 +402,18 @@ func populateSlots() {
 		populated = true
 	}
 
+	c:=0
+	all:=countSelected()
+
 	softSlot:=0
+	myProgressBar.zero()
+	myProgressBar.widget.SetRange(c,all)
 	for sn, s := range Slots {
 		//update single slot
 		if s.slot.IsChecked() {
+			c++
+			myProgressBar.update(c)
+			log.Printf("update %d\n",c)
 			if Device == Devices.name[1] {
 				softSlot = sn + 1
 			} else {
@@ -401,3 +504,12 @@ func getPosFromList(val string, array []string) (exists bool, index int) {
 	return
 }
 
+func (pb progressBar) update(c int)  {
+	pb.widget.SetValue(c)
+}
+
+func (pb *progressBar) zero() {
+	pb.widget.Reset()
+	//pb.widget.SetValue(0)
+	//pb.widget.Repaint()
+}

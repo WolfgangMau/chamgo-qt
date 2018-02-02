@@ -176,6 +176,7 @@ func (d *deviceActions) load(device string) {
 		d.selectedSlot = Commands.setting + "?"
 
 		d.startUpload = Commands.upload
+		d.clearSlot = Commands.clear
 
 	case "RevG":
 		d.getModes = Commands.config + "=?"
@@ -189,5 +190,6 @@ func (d *deviceActions) load(device string) {
 		d.selectSlot = Commands.setting + "="
 		d.selectedSlot = Commands.setting + "?"
 		d.startUpload = Commands.upload
+		d.clearSlot = Commands.clear
 	}
 }
