@@ -2,13 +2,11 @@ package main
 
 import (
 	"github.com/therecipe/qt/widgets"
-	//"github.com/chrizzzzz/go-xmodem/xmodem"
 	"log"
 	"strconv"
 	"strings"
 	"os"
 	"io/ioutil"
-	"time"
 )
 
 var temp2 []string
@@ -164,13 +162,18 @@ type packet struct {
 }
 
 
-func uploadSlots() {
+func uploadSlots() bool {
+	if countSelected() > 1 {
+		widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
+			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		return false
+	}
 	var filename string
 	fileSelect := widgets.NewQFileDialog(nil, 0)
 	filename = fileSelect.GetOpenFileName(nil, "open Dump", "", "", "", fileSelect.Options())
     if filename == ""{
     	log.Println("no file selöeted")
-    	return
+    	return false
 	}
 
 	for i, s := range Slots {
@@ -181,41 +184,7 @@ func uploadSlots() {
 				hardwareSlot = i + 1
 			}
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
-			log.Printf("I should probably upoload %s to Slot %d\n", filename, i)
-			/**
-							XMODEM 128 byte blocks
-							----------------------
-				SENDER                                      RECEIVER
-														<-- NAK
-				SOH 01 FE Data[128] CSUM                -->
-														<-- ACK
-				SOH 02 FD Data[128] CSUM                -->
-														<-- ACK
-				SOH 03 FC Data[128] CSUM                -->
-														<-- ACK
-				SOH 04 FB Data[128] CSUM                -->
-														<-- ACK
-				SOH 05 FA Data[100] CPMEOF[28] CSUM     -->
-														<-- ACK
-				EOT                                     -->
-														<-- ACK
-
-			 */
-
-			 // very basic implementation of a xmodem-sender of mine
-			 // buggy on windows32 (uploads, but no feedback - app freezes
-			 // because the chameleon is not stopping from xmodem-receiver-mode)
-			 // the usb-device must be removed to cut connection
-			 // but works mostly on osx an linux ...
-			 // the lack of responses is the most problesm, since I was able to get
-			 // a bi-directional data-exchange working (I don't get a NAK, ACK from receiver)
-			 // so just a 'fire and forget' mission for the data, but mostly it works
-			 // ToDo: needs to be tested with other serial libs - reader is needed for download also!
-			 // ToDo: in order to get closer to the xmodem specification:
-			 // 	- fill eventually 'not filled' data-blocks with EOF's
-			 // 	- retry (10 times) on transmision-failure -> (blocked by bi-direction-issue)
-			 //     - make a library out of it
-
+			log.Printf("upoload %s to Slot %d\n", filename, i)
 			// Open file
 			log.Printf("loading file %s\n", filename)
 			fIn, err := os.Open(filename)
@@ -231,110 +200,89 @@ func uploadSlots() {
 
 			var p []packet
 			var p1 packet
-			//build 128byte packages (works at this stage only for 1k and 4k)
-			for _,d := range data {
-				//temp := byte(d)
-					//temp := byte(d)
-					p1.data = append(p1.data, d)
+			oBuffer := make([]byte, 1)
+			for _, d := range data {
+				p1.data = append(p1.data, d)
 
-					if len(p1.data) == 128 {
-						p1.proto = 0x01
-						p1.block = len(p)
-						p1.rblocks = 255-len(p)
-						p1.chk = checksum(p1.data, 0)
-						p = append(p, p1)
-						p1.data=[]byte("")
-					}
+				if len(p1.data) == 128 {
+					p1.proto = 0x01
+					p1.block = len(p)
+					p1.rblocks = 255 - len(p)
+					p1.chk = checksum(p1.data, 0)
+					p = append(p, p1)
+					p1.data = []byte("")
+				}
 			}
 
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.startUpload)
+			if SerialResponse.Code == 110 {
 
-			//re-establish a fresh connection
-			err = serialPort.Close()
-			if err != nil {
-				log.Println(err)
+				//send NAK byte / init transfer
+				//var nak []byte
+				//nak = append(nak, 0x04)
+				//serialPort.Write(nak)
+				//if _,err = serialPort.Read(oBuffer); err != nil {
+				//	log.Println(err)
+				//}
+				//if oBuffer[0] != 0x06 {
+				//	log.Printf("nexpectedanswer to NAK: 0x%X\n", oBuffer[0])
+				//}
+
+				//start uploading packets
+				failure := 0
+				success := 0
+				for _, sp := range p {
+					var reSend bool = true
+					for reSend {
+						sendPacket(sp)
+						if _,err = serialPort.Read(oBuffer); err != nil {
+							log.Println(err)
+						} else {
+							switch oBuffer[0] {
+								case 0x015: // NAK
+									log.Printf("resend packet %d\n",sp.block)
+									reSend = true
+									failure++
+								case 0x06: // ACK
+									reSend = false
+									success++
+								default:
+									log.Printf("unexspected answer(0x%X) for packet %d\n",oBuffer[0],sp.block)
+									reSend = false
+							}
+						}
+					}
+					//myProgressBar.update(i)
+				}
+				log.Printf("upload done - Success: %d - Failures: %d\n", success, failure)
+
+				//send EOT byte
+				var eot []byte
+				eot = append(eot, 0x04)
+				serialPort.Write(eot)
+				if _,err = serialPort.Read(oBuffer); err != nil {
+					log.Println(err)
+				}
+				if oBuffer[0] != 0x06 {
+					log.Printf("nexpectedanswer to EOT: 0x%X\n", oBuffer[0])
+				}
+
+				////send CAN byte
+				//var can []byte
+				//can = append(can,0x18)
+				//_,err = serialPort.Write(can)
+				//if _,err = serialPort.Read(oBuffer); err != nil {
+				//	log.Println(err)
+				//}
+				//if oBuffer[0] != 0x06 {
+				//	log.Printf("unexpected answer to CAN: 0x%X\n",oBuffer[0])
+				//}
 			}
-			time.Sleep(time.Millisecond * 200)
-			err = connectSerial(SerialDevice1)
-			if err != nil {
-				log.Println(err)
-			}
-			time.Sleep(time.Millisecond * 500)
-			// send NAK byte
-			//var nak []byte
-			//nak = append(nak,0x06)
-			//_,err = serialPort.Write(nak)
-
-
-			// send ACK byte
-			//var ack []byte
-			//ack = append(ack,0x15)
-			//_,err = serialPort.Write(ack)
-
-			//send all packets
-			//all:=len(p)
-			//myProgressBar.widget.SetStatusTip("uploadiong file "+filename)
-			//myProgressBar.widget.SetRange(0,all)
-			for _,sp := range p {
-				sendPacket(sp)
-				time.Sleep(time.Millisecond * 25)
-				//myProgressBar.update(i)
-			}
-		    log.Println("upload done")
-
-			//send EOF byte
-			//var eof []byte
-			//eof = append(eof,0x1a)
-			//_,err = serialPort.Write(eof)
-			//if err != nil {
-			//	log.Println(err)
-			//}
-
-
-		    //send EOT byte
-			var eot []byte
-			eot = append(eot,0x04)
-			serialPort.Write(eot)
-
-			time.Sleep(time.Millisecond * 100)
-			serialPort.Write(eot)
-
-			if err != nil {
-				log.Println(err)
-			}
-
-			//send CAN byte
-			//var can []byte
-			//can = append(can,0x18)
-			//_,err = serialPort.Write(can)
-
-			//for i2:=0; i2< 10; i2++ {
-			//	for i:=0; i<131; i++ {
-			//		serialPort.Write(can)
-			//	}
-			//}
-
-			//clear up serial buffers ...
-			//serialPort.ResetOutputBuffer()
-			//serialPort.ResetInputBuffer()
-
-			//close serial
-			err = serialPort.Close()
-			if err != nil {
-				log.Println(err)
-			}
-			//start serial and cut xmodem-receiver (again 4 windows)
-			//myProgressBar.update(all)
-
-			err = connectSerial(SerialDevice1)
-			if err != nil {
-				log.Println(err)
-			}
-
-			populateSlots()
 		}
 	}
+	refreshSlot()
+	return true
 }
 
 func sendPacket(p packet){

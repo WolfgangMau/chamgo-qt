@@ -64,12 +64,13 @@ func connectSerial(selSerialPort string) ( err error) {
 			err = errors.New("no device given")
 		}
 		mode := &serial.Mode{
-			BaudRate: 9600,
+			BaudRate: 57600,
 			Parity:   serial.NoParity,
 			DataBits: 8,
 			StopBits: serial.OneStopBit,
 		}
 		serialPort, err = serial.Open(selSerialPort, mode)
+
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -78,7 +79,7 @@ func connectSerial(selSerialPort string) ( err error) {
 	}()
 	select {
 	case res := <-c1:
-		log.Printf("connected %v\n", res)
+		log.Printf("connected to %q\n", res)
 	case <-time.After(time.Second * 2):
 		log.Println("serial connection timeout")
 		err = errors.New("serial connection timeout")
@@ -98,6 +99,7 @@ func sendSerialCmd(cmd string) {
 	SerialResponse.String = ""
 	SerialResponse.Payload = ""
 
+	log.Printf("sending: %s\n",cmd)
 	temp := sendSerial(cmd)
 	getSerialResponse(temp)
 }
@@ -106,17 +108,30 @@ func sendSerial(cmdStr string) string {
 	var temp string
 	c1 := make(chan string, 1)
 	go func() {
-		//time.Sleep(time.Second * 2)
-		serialPort.ResetInputBuffer()
+
+		//send cmd
 		_, err := serialPort.Write([]byte(cmdStr + "\r\n"))
+		log.Printf("sended: %q\n",[]byte(cmdStr + "\r\n"))
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("error on send: %s\n",err.Error())
 		}
+
+		//wait and retrieve inputBuffer
+		time.Sleep(time.Millisecond * 100)
 		temp = receiveSerial()
-		if temp == "1" {
-			temp = "1" + receiveSerial()
+		log.Printf("received: %q\n",temp)
+
+		//windows bug - retry mostly helps
+		if len(temp) < 6 {
+			ln:=len(temp)
+			log.Printf("short answer (%s) - retry to get rest of it ... ",temp)
+			time.Sleep(time.Millisecond * 100)
+			temp = temp + receiveSerial()
+			if ln < len(temp) {
+				log.Printf("retry got (%s)\n",temp)
+			}
 		}
-		c1 <- temp
+		c1<-temp
 	}()
 	select {
 	case res := <-c1:
@@ -127,23 +142,27 @@ func sendSerial(cmdStr string) string {
 	return temp
 }
 
-func receiveSerial() (recv string) {
+func receiveSerial()  string {
 	buff := make([]byte, 512)
 	n:=0
-	var err error
+	var err error = nil
+	log.Println("start receive")
 	for {
-		log.Println("loop receive")
 		// Reads up to 512 bytes
-		time.Sleep(time.Millisecond * 20)
+
+		log.Printf("bytes %d\n",n)
 		n, err = serialPort.Read(buff)
+
+		log.Printf("received %d bytes to buff: %s\n",n,buff[:n])
 		if err != nil {
-			log.Println(err)
+			log.Println(string(err.Error()))
 			break
 		}
 		//minimum 6 bytes reqierd : 101:OK
 		if n > 5 {
 			break
 		}
+		log.Println("loop receive")
 	}
 	log.Println(string(buff[:n]))
 	return string(buff[:n])
@@ -164,7 +183,6 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 func getSerialResponse(res string) {
 	var result []string
-
 	res = strings.Replace(res, "\n", "#", -1)
 	res = strings.Replace(res, "\r", "#", -1)
 	res = strings.Replace(res, "##", "#", -1)

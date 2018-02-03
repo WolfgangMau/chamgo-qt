@@ -57,8 +57,9 @@ func serialTab() *widgets.QWidget {
 
 			err := connectSerial(SerialDevice1)
 			if err != nil {
-				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial",
+				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial\n"+string(err.Error()),
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+				log.Printf("error on connect: %q\n", err)
 			} else {
 				Device = deviceSelect.CurrentText()
 				Commands.load(Device)
