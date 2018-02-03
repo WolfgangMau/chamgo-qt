@@ -10,7 +10,6 @@ import (
 	"time"
 	"errors"
 	"reflect"
-	"fmt"
 )
 
 var serialPort *newSerial.Port
@@ -73,6 +72,7 @@ func connectSerial(selSerialPort string) ( err error) {
 		//	StopBits: serial.OneStopBit,
 		//}
 		//serialPort, err = serial.Open(selSerialPort, mode)
+		//c := &newSerial.Config{Name: selSerialPort, Baud: 115200, ReadTimeout: time.Millisecond * 200}
 		c := &newSerial.Config{Name: selSerialPort, Baud: 115200}
 		serialPort,err = newSerial.OpenPort(c)
 		if err != nil {
@@ -108,7 +108,6 @@ func sendSerialCmd(cmd string) {
 }
 
 func sendSerial(cmdStr string) string {
-	serialPort.Flush()
 	var temp string
 	c1 := make(chan string, 1)
 	go func() {
@@ -117,12 +116,13 @@ func sendSerial(cmdStr string) string {
 		if err != nil {
 			log.Println("errro send serial: ",err, cmdStr)
 		}
-		//log.Print("n: ",n)
+		log.Printf("len = %d - crlf= %X\n",len([]byte("\r\n")),[]byte("\r\n"))
 		temp = receiveSerial()
-		if temp == "1" {
-			temp = "1" + receiveSerial()
-		}
-		c1 <- temp
+		log.Printf("serialReceive : %s\n",temp)
+		//if len(temp) < 6 {
+		//	temp = temp + receiveSerial()
+		//}
+		c1<-temp
 	}()
 	select {
 	case res := <-c1:
@@ -133,26 +133,37 @@ func sendSerial(cmdStr string) string {
 	return temp
 }
 
-func receiveSerial() (recv string) {
-	buff := make([]byte, 512)
-	n:=0
+func receiveSerial() (resp string) {
+	buff := make([]byte, 1024)
 	var err error
-	//var err error
-	for {
-		log.Println("loop receive")
-		// Reads up to 512 bytes
-		n, err = serialPort.Read(buff)
+	var n = 1
+	var c = 0
+
+	for n > 0 {
+		c++
+		n, _ = serialPort.Read(buff)
+		log.Printf("n: %d\n",n)
 		if err != nil {
-			log.Println("errro receive serial: ",err)
+			log.Printf("error temp: %s - n %d - error (%s)\n", resp,n, err)
 		}
-		log.Printf("%q", buff[:n])
-		//minimum 6 bytes reqierd : 101:OK
-		if n > 5 {
-			break
+		log.Printf("n: %d\n",n)
+		if  n > 0 {
+			resp = resp + string(buff[:n])
+			//check if there is a CRLF at the end
+			if len(resp) >= 2 && resp[(len(resp)-2):] == string([]byte{0x0D,0x0A}) {
+				log.Println("receiveSerial -> EOL")
+				n=0
+			}
+			log.Printf("fresh read of %d bytes - temp: %s\n", n, resp)
+		} else {
+			log.Printf("n < 1 (%d)- Buffer: %d\n",n,len(resp))
 		}
 	}
-	log.Println("receive: ",fmt.Sprintf("%s",buff[:n]),n)
-	return string(buff[:n])
+
+	log.Printf("end of loop %d -  n: %d - Buffer: %s\n",c,n,resp)
+	n=len(resp)
+	log.Printf("loops= %d  bytes= %d\n",c,n)
+	return resp
 }
 
 func deviceInfo(longInfo string) (shortInfo string) {
@@ -170,8 +181,6 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 func getSerialResponse(res string) {
 	var result []string
-	log.Printf("q getSerialResponse: %q\n",res)
-	log.Printf("s getSerialResponse: %s\n",res)
 
 	res = strings.Replace(res, "\n", "#", -1)
 	res = strings.Replace(res, "\r", "#", -1)

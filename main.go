@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/therecipe/qt/widgets"
 	"os"
+	"log"
 )
 
 var AppName = "Chamgo-QT"
@@ -10,6 +11,7 @@ var Connected bool
 var Statusbar *widgets.QStatusBar
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Connected = false
 	ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
 
