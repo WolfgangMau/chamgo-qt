@@ -96,7 +96,7 @@ func serialTab() *widgets.QWidget {
 				Connected = false
 				serialPort.Close()
 				//GetSlotTicker.Stop()
-				log.Println("GetSlotTicker stopped")
+				//log.Println("GetSlotTicker stopped")
 				myProgressBar.zero()
 			}
 		}

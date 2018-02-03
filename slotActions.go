@@ -266,7 +266,11 @@ func uploadSlots() bool {
 				}
 				if oBuffer[0] != 0x06 {
 					log.Printf("nexpectedanswer to EOT: 0x%X\n", oBuffer[0])
+				} else {
+					log.Println("end of transfer")
+
 				}
+
 
 				////send CAN byte
 				//var can []byte

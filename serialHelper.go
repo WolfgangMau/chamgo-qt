@@ -2,6 +2,7 @@ package main
 
 import (
 	"go.bug.st/serial.v1"
+	newSerial "github.com/tarm/serial"
 	"go.bug.st/serial.v1/enumerator"
 	"log"
 	"strconv"
@@ -9,9 +10,10 @@ import (
 	"time"
 	"errors"
 	"reflect"
+	"fmt"
 )
 
-var serialPort serial.Port
+var serialPort *newSerial.Port
 var SelectedPortId int
 var SelectedDeviceId int
 
@@ -56,30 +58,32 @@ func getSerialPorts() (usbports[]string, perr error) {
 }
 
 func connectSerial(selSerialPort string) ( err error) {
-	c1 := make(chan serial.Port, 1)
+	c1 := make(chan int, 1)
 	go func() {
 		//time.Sleep(time.Second * 1)
 
 		if selSerialPort == "" {
 			err = errors.New("no device given")
 		}
-		mode := &serial.Mode{
-			BaudRate: 57600,
-			Parity:   serial.NoParity,
-			DataBits: 8,
-			StopBits: serial.OneStopBit,
-		}
-		serialPort, err = serial.Open(selSerialPort, mode)
 
+		//mode := &serial.Mode{
+		//	BaudRate: 115200,
+		//	Parity:   serial.NoParity,
+		//	DataBits: 8,
+		//	StopBits: serial.OneStopBit,
+		//}
+		//serialPort, err = serial.Open(selSerialPort, mode)
+		c := &newSerial.Config{Name: selSerialPort, Baud: 115200}
+		serialPort,err = newSerial.OpenPort(c)
 		if err != nil {
-			log.Println(err)
+			log.Println("error serial connect ",err)
 		} else {
-			c1 <- serialPort
+			c1 <- 1
 		}
 	}()
 	select {
 	case res := <-c1:
-		log.Printf("connected to %q\n", res)
+		log.Printf("serialPort %v  connected - res: %d\n", serialPort, res)
 	case <-time.After(time.Second * 2):
 		log.Println("serial connection timeout")
 		err = errors.New("serial connection timeout")
@@ -99,39 +103,26 @@ func sendSerialCmd(cmd string) {
 	SerialResponse.String = ""
 	SerialResponse.Payload = ""
 
-	log.Printf("sending: %s\n",cmd)
 	temp := sendSerial(cmd)
 	getSerialResponse(temp)
 }
 
 func sendSerial(cmdStr string) string {
+	serialPort.Flush()
 	var temp string
 	c1 := make(chan string, 1)
 	go func() {
-
-		//send cmd
+		//time.Sleep(time.Second * 2)
 		_, err := serialPort.Write([]byte(cmdStr + "\r\n"))
-		log.Printf("sended: %q\n",[]byte(cmdStr + "\r\n"))
 		if err != nil {
-			log.Printf("error on send: %s\n",err.Error())
+			log.Println("errro send serial: ",err, cmdStr)
 		}
-
-		//wait and retrieve inputBuffer
-		time.Sleep(time.Millisecond * 100)
+		//log.Print("n: ",n)
 		temp = receiveSerial()
-		log.Printf("received: %q\n",temp)
-
-		//windows bug - retry mostly helps
-		if len(temp) < 6 {
-			ln:=len(temp)
-			log.Printf("short answer (%s) - retry to get rest of it ... ",temp)
-			time.Sleep(time.Millisecond * 100)
-			temp = temp + receiveSerial()
-			if ln < len(temp) {
-				log.Printf("retry got (%s)\n",temp)
-			}
+		if temp == "1" {
+			temp = "1" + receiveSerial()
 		}
-		c1<-temp
+		c1 <- temp
 	}()
 	select {
 	case res := <-c1:
@@ -142,29 +133,25 @@ func sendSerial(cmdStr string) string {
 	return temp
 }
 
-func receiveSerial()  string {
+func receiveSerial() (recv string) {
 	buff := make([]byte, 512)
 	n:=0
-	var err error = nil
-	log.Println("start receive")
+	var err error
+	//var err error
 	for {
+		log.Println("loop receive")
 		// Reads up to 512 bytes
-
-		log.Printf("bytes %d\n",n)
 		n, err = serialPort.Read(buff)
-
-		log.Printf("received %d bytes to buff: %s\n",n,buff[:n])
 		if err != nil {
-			log.Println(string(err.Error()))
-			break
+			log.Println("errro receive serial: ",err)
 		}
+		log.Printf("%q", buff[:n])
 		//minimum 6 bytes reqierd : 101:OK
 		if n > 5 {
 			break
 		}
-		log.Println("loop receive")
 	}
-	log.Println(string(buff[:n]))
+	log.Println("receive: ",fmt.Sprintf("%s",buff[:n]),n)
 	return string(buff[:n])
 }
 
@@ -183,6 +170,9 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 func getSerialResponse(res string) {
 	var result []string
+	log.Printf("q getSerialResponse: %q\n",res)
+	log.Printf("s getSerialResponse: %s\n",res)
+
 	res = strings.Replace(res, "\n", "#", -1)
 	res = strings.Replace(res, "\r", "#", -1)
 	res = strings.Replace(res, "##", "#", -1)
