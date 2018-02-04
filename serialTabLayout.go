@@ -9,6 +9,8 @@ import (
 var (
 	serialSendButton *widgets.QPushButton
 	serialMonitor    *widgets.QPlainTextEdit
+	serialPortSelect  *widgets.QComboBox
+	deviceSelect *widgets.QComboBox
 )
 
 func serialTab() *widgets.QWidget {
@@ -22,13 +24,13 @@ func serialTab() *widgets.QWidget {
 
 	serConLayout := widgets.NewQFormLayout(nil)
 
-	deviceSelect := widgets.NewQComboBox(nil)
+	deviceSelect = widgets.NewQComboBox(nil)
 	deviceSelect.AddItems(Devices.name)
 	deviceSelect.SetCurrentIndex(0)
 	deviceSelect.SetFixedWidth(160)
 	deviceSelect.SetCurrentIndex(SelectedDeviceId)
 
-	serialPortSelect := widgets.NewQComboBox(nil)
+	serialPortSelect = widgets.NewQComboBox(nil)
 	serialPortSelect.AddItems(serialPorts)
 	serialPortSelect.SetFixedWidth(160)
 	serialPortSelect.SetCurrentIndex(SelectedPortId)
@@ -71,6 +73,7 @@ func serialTab() *widgets.QWidget {
 					serialConnectButton.SetText("Disconnect")
 					serialSendButton.SetDisabled(false)
 					serialSendButton.Repaint()
+					checkForDevices()
 				}
 				//web got a expected answer from the VERSION(MY) cmd
 				if SerialResponse.Code == 101 {
@@ -80,7 +83,7 @@ func serialTab() *widgets.QWidget {
 					buttonClicked(0)
 					buttonClicked(4)
 					buttonClicked(1)
-					//checkCurrentSelection()
+
 
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",

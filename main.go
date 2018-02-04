@@ -46,6 +46,7 @@ func main() {
 	Statusbar.ShowMessage("not Connected", 0)
 	window.SetStatusBar(Statusbar)
 
+	checkForDevices()
 	// Show the window
 	window.Show()
 
