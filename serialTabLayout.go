@@ -5,10 +5,10 @@ import (
 	"log"
 	"strconv"
 )
+
 var (
 	serialSendButton *widgets.QPushButton
 	serialMonitor    *widgets.QPlainTextEdit
-
 )
 
 func serialTab() *widgets.QWidget {
@@ -66,7 +66,7 @@ func serialTab() *widgets.QWidget {
 				DeviceActions.load(Device)
 
 				sendSerialCmd(Commands.version + "?")
-				if SerialResponse.Code >=100 {
+				if SerialResponse.Code >= 100 {
 					serialConnectButton.SetText("Disconnect")
 					serialSendButton.SetDisabled(false)
 					serialSendButton.Repaint()

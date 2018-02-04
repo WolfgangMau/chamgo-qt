@@ -6,8 +6,8 @@ import (
 	"strconv"
 )
 
-
 var myProgressBar progressBar
+
 type progressBar struct {
 	widget *widgets.QProgressBar
 }
@@ -140,7 +140,6 @@ func allSlots() *widgets.QWidget {
 		}
 	}
 
-
 	abtnLayout := widgets.NewQGridLayout(nil)
 	for i, s := range ActionButtons {
 		AButtons[i].b = widgets.NewQPushButton2(s, nil)
@@ -152,7 +151,6 @@ func allSlots() *widgets.QWidget {
 	A2ButtonLayout := widgets.NewQHBoxLayout()
 	A2ButtonLayout.AddWidget(AButtonGroup, 0, 0x0004)
 	slotsTabLayout.AddLayout2(A2ButtonLayout, 3, 0, 1, 4, 0x0004)
-
 
 	//for i:=0; i<len(Slots); i++ {
 	//	Slots[c].slot.ConnectStateChanged(func(checked int) {

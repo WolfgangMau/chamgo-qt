@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/therecipe/qt/widgets"
-	"os"
 	"log"
+	"os"
 )
 
 var AppName = "Chamgo-QT"
@@ -33,7 +33,7 @@ func main() {
 	mainlayout.SetAlign(33)
 
 	myProgressBar.widget = widgets.NewQProgressBar(window)
-	myProgressBar.widget.SetRange(0,100)
+	myProgressBar.widget.SetRange(0, 100)
 	myProgressBar.widget.SetVisible(true)
 	myProgressBar.widget.ShowDefault()
 	mainlayout.AddWidget(myProgressBar.widget, 0, 0x0020)

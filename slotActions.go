@@ -163,130 +163,129 @@ type packet struct {
 
 
 func uploadSlots() bool {
-	if countSelected() > 1 {
-		widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
-			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-		return false
-	}
-	var filename string
-	fileSelect := widgets.NewQFileDialog(nil, 0)
-	filename = fileSelect.GetOpenFileName(nil, "open Dump", "", "", "", fileSelect.Options())
-    if filename == ""{
-    	log.Println("no file selöeted")
-    	return false
-	}
+		if countSelected() > 1 {
+			widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
+				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+			return false
+		}
+		var filename string
+		fileSelect := widgets.NewQFileDialog(nil, 0)
+		filename = fileSelect.GetOpenFileName(nil, "open Dump", "", "", "", fileSelect.Options())
+		if filename == "" {
+			log.Println("no file selöeted")
+			return false
+		}
 
-	for i, s := range Slots {
-		if s.slot.IsChecked() {
-			log.Printf("********************\nupdating %s\n", s.slotl.Text())
-			hardwareSlot := i
-			if Device == Devices.name[1] {
-				hardwareSlot = i + 1
-			}
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
-			log.Printf("upoload %s to Slot %d\n", filename, i)
-			// Open file
-			log.Printf("loading file %s\n", filename)
-			fIn, err := os.Open(filename)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			//readfile into buffer
-			data, err := ioutil.ReadAll(fIn)
-			if err != nil {
-				log.Println(err)
-			}
-			fIn.Close()
-
-			var p []packet
-			var p1 packet
-			oBuffer := make([]byte, 1)
-			for _, d := range data {
-				p1.data = append(p1.data, d)
-
-				if len(p1.data) == 128 {
-					p1.proto = 0x01
-					p1.block = len(p)
-					p1.rblocks = 255 - len(p)
-					p1.chk = checksum(p1.data, 0)
-					p = append(p, p1)
-					p1.data = []byte("")
+		for i, s := range Slots {
+			if s.slot.IsChecked() {
+				log.Printf("********************\nupdating %s\n", s.slotl.Text())
+				hardwareSlot := i
+				if Device == Devices.name[1] {
+					hardwareSlot = i + 1
 				}
-			}
+				sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+				log.Printf("upoload %s to Slot %d\n", filename, i)
+				// Open file
+				log.Printf("loading file %s\n", filename)
+				fIn, err := os.Open(filename)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				//readfile into buffer
+				data, err := ioutil.ReadAll(fIn)
+				if err != nil {
+					log.Println(err)
+				}
+				fIn.Close()
 
-			//set chameleon into receiver-mode
-			sendSerialCmd(DeviceActions.startUpload)
-			if SerialResponse.Code == 110 {
+				var p []packet
+				var p1 packet
+				oBuffer := make([]byte, 1)
+				for _, d := range data {
+					p1.data = append(p1.data, d)
 
-				//send NAK byte / init transfer
-				//var nak []byte
-				//nak = append(nak, 0x04)
-				//serialPort.Write(nak)
-				//if _,err = serialPort.Read(oBuffer); err != nil {
-				//	log.Println(err)
-				//}
-				//if oBuffer[0] != 0x06 {
-				//	log.Printf("nexpectedanswer to NAK: 0x%X\n", oBuffer[0])
-				//}
+					if len(p1.data) == 128 {
+						p1.proto = 0x01
+						p1.block = len(p)
+						p1.rblocks = 255 - len(p)
+						p1.chk = checksum(p1.data, 0)
+						p = append(p, p1)
+						p1.data = []byte("")
+					}
+				}
 
-				//start uploading packets
-				failure := 0
-				success := 0
-				for _, sp := range p {
-					var reSend bool = true
-					for reSend {
-						sendPacket(sp)
-						if _,err = serialPort.Read(oBuffer); err != nil {
-							log.Println(err)
-						} else {
-							switch oBuffer[0] {
+				//set chameleon into receiver-mode
+				sendSerialCmd(DeviceActions.startUpload)
+				if SerialResponse.Code == 110 {
+
+					//send NAK byte / init transfer
+					//var nak []byte
+					//nak = append(nak, 0x04)
+					//serialPort.Write(nak)
+					//if _,err = serialPort.Read(oBuffer); err != nil {
+					//	log.Println(err)
+					//}
+					//if oBuffer[0] != 0x06 {
+					//	log.Printf("nexpectedanswer to NAK: 0x%X\n", oBuffer[0])
+					//}
+
+					//start uploading packets
+					failure := 0
+					success := 0
+					for _, sp := range p {
+						var reSend bool = true
+						for reSend {
+							sendPacket(sp)
+							if _, err = serialPort.Read(oBuffer); err != nil {
+								log.Println(err)
+							} else {
+								switch oBuffer[0] {
 								case 0x015: // NAK
-									log.Printf("resend packet %d\n",sp.block)
+									log.Printf("resend packet %d\n", sp.block)
 									reSend = true
 									failure++
 								case 0x06: // ACK
 									reSend = false
 									success++
 								default:
-									log.Printf("unexspected answer(0x%X) for packet %d\n",oBuffer[0],sp.block)
+									log.Printf("unexspected answer(0x%X) for packet %d\n", oBuffer[0], sp.block)
 									reSend = false
+								}
 							}
 						}
+						//myProgressBar.update(i)
 					}
-					//myProgressBar.update(i)
+					log.Printf("upload done - Success: %d - Failures: %d\n", success, failure)
+
+					//send EOT byte
+					var eot []byte
+					eot = append(eot, 0x04)
+					serialPort.Write(eot)
+					if _, err = serialPort.Read(oBuffer); err != nil {
+						log.Println(err)
+					}
+					if oBuffer[0] != 0x06 {
+						log.Printf("nexpectedanswer to EOT: 0x%X\n", oBuffer[0])
+					} else {
+						log.Println("end of transfer")
+
+					}
+
+					////send CAN byte
+					//var can []byte
+					//can = append(can,0x18)
+					//_,err = serialPort.Write(can)
+					//if _,err = serialPort.Read(oBuffer); err != nil {
+					//	log.Println(err)
+					//}
+					//if oBuffer[0] != 0x06 {
+					//	log.Printf("unexpected answer to CAN: 0x%X\n",oBuffer[0])
+					//}
 				}
-				log.Printf("upload done - Success: %d - Failures: %d\n", success, failure)
-
-				//send EOT byte
-				var eot []byte
-				eot = append(eot, 0x04)
-				serialPort.Write(eot)
-				if _,err = serialPort.Read(oBuffer); err != nil {
-					log.Println(err)
-				}
-				if oBuffer[0] != 0x06 {
-					log.Printf("nexpectedanswer to EOT: 0x%X\n", oBuffer[0])
-				} else {
-					log.Println("end of transfer")
-
-				}
-
-
-				////send CAN byte
-				//var can []byte
-				//can = append(can,0x18)
-				//_,err = serialPort.Write(can)
-				//if _,err = serialPort.Read(oBuffer); err != nil {
-				//	log.Println(err)
-				//}
-				//if oBuffer[0] != 0x06 {
-				//	log.Printf("unexpected answer to CAN: 0x%X\n",oBuffer[0])
-				//}
 			}
 		}
-	}
-	refreshSlot()
-	return true
+		refreshSlot()
+		return true
 }
 
 func sendPacket(p packet){
