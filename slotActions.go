@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"runtime"
 )
 
 var temp2 []string
@@ -361,9 +360,8 @@ func downloadSlots() {
 				var protocmd []byte
 				protocmd = append(protocmd, NAK)
 				var (
-					transfered = 0
-					success    = 0
-					failed     = 0
+					success     = 0
+					failed      = 0
 				)
 
 				var getBytes = true
@@ -374,19 +372,18 @@ func downloadSlots() {
 						log.Println(err)
 						break
 					}
+
 					if protocmd[0] == EOT || protocmd[0] == EOF || protocmd[0] == CAN {
 						log.Printf("tranfer end.")
 						break
 					}
-					for oBuffer[0] == SOH || oBuffer[0] == ACK {
-						if _, err := serialPort.Read(oBuffer); err != nil {
-							log.Println(err)
-							break
-						}
+
+					if _, err := serialPort.Read(oBuffer); err != nil {
+						log.Println(err)
+						break
 					}
 					//rotocmd[0] = oBuffer[0]
 					log.Printf("Anser to 0x%X -> 0x%X\n", protocmd[0], oBuffer[0])
-					transfered++
 
 					//start receiving blocks
 					if getBytes {
@@ -403,34 +400,14 @@ func downloadSlots() {
 							log.Printf("bytesReceived: %d - n: %d\n", bytesReceived, n)
 
 
-							//on linux (debian 9.3.9 in a viratualbox) I get one responsebyte more
-							minBytes:=0
-							offset:=0
-							switch runtime.GOOS {
-							case "linux":
-								minBytes=132
-							default:
-								minBytes=131
-
-							}
-
-							if bytesReceived >= minBytes {
-								//offset = bytesReceived - minBytes
-								//offset=0
-								//if bytesReceived >= 132 {
-								//	log.Println("got more as expected ...")
-								//	protocmd[0] = NAK
-								//	getBytes = false
-								//	blockReceived = true
-								//}
-
+							if bytesReceived >= 131 {
 								log.Printf("Received: (offset: 0)\n%X\n", dBuffer[:bytesReceived])
 								myPacket.proto = oBuffer
-								myPacket.packetNum = int(dBuffer[offset+0])
-								myPacket.packetInv = int(dBuffer[offset+1])
-								myPacket.payload = dBuffer[offset+2:offset+130]
-								myPacket.checksumm = int(dBuffer[offset+130])
-								log.Printf("Received: (offset: %d)\n%X\n",offset, dBuffer[offset:bytesReceived])
+								myPacket.packetNum = int(dBuffer[0])
+								myPacket.packetInv = int(dBuffer[1])
+								myPacket.payload = dBuffer[2:130]
+								myPacket.checksumm = int(dBuffer[130])
+								log.Printf("Received: \n%X\n", dBuffer[:bytesReceived])
 
 								CHK := int(checksum(myPacket.payload, 0))
 								if CHK == myPacket.checksumm && myPacket.checkPaylod() {
@@ -456,7 +433,7 @@ func downloadSlots() {
 										}
 									}
 									//stop transfer
-									log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n",myPacket.packetNum,bytesReceived,dBuffer[offset:bytesReceived])
+									log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n",myPacket.packetNum,bytesReceived,dBuffer[:bytesReceived])
 									failed-- //the last packet checksum must have missmatched - no error!
 									protocmd[0] = CAN
 									getBytes = false
