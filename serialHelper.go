@@ -6,7 +6,7 @@ import (
 	"go.bug.st/serial.v1"
 	"go.bug.st/serial.v1/enumerator"
 	"log"
-	"reflect"
+	//"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -210,13 +210,13 @@ func getSerialResponse(res string) {
 	}
 }
 
-func dumpResp(t serialResponse) {
-	s := reflect.ValueOf(&t).Elem()
-	typeOfT := s.Type()
-
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		log.Printf("%d: %s %s = %v\n", i,
-			typeOfT.Field(i).Name, f.Type(), f.Interface())
-	}
-}
+//func dumpResp(t serialResponse) {
+//	s := reflect.ValueOf(&t).Elem()
+//	typeOfT := s.Type()
+//
+//	for i := 0; i < s.NumField(); i++ {
+//		f := s.Field(i)
+//		log.Printf("%d: %s %s = %v\n", i,
+//			typeOfT.Field(i).Name, f.Type(), f.Interface())
+//	}
+//}
