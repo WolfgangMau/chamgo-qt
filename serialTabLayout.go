@@ -65,13 +65,14 @@ func serialTab() *widgets.QWidget {
 				Commands.load(Device)
 				DeviceActions.load(Device)
 
+				//ask for the device-version
 				sendSerialCmd(Commands.version + "?")
 				if SerialResponse.Code >= 100 {
 					serialConnectButton.SetText("Disconnect")
 					serialSendButton.SetDisabled(false)
 					serialSendButton.Repaint()
 				}
-
+				//web got a expected answer from the VERSION(MY) cmd
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true
@@ -79,6 +80,7 @@ func serialTab() *widgets.QWidget {
 					buttonClicked(0)
 					buttonClicked(4)
 					buttonClicked(1)
+					//checkCurrentSelection()
 
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",

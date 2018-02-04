@@ -7,3 +7,5 @@ xmodem.c_back
 deploy/
 *.zip
 xmutil
+*.dump
+test*
