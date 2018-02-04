@@ -169,6 +169,7 @@ type deviceActions struct {
 	getMode   string
 	getUid    string
 	getButton string
+	getButtonl string
 	getSize   string
 	//actions
 	selectSlot    string
@@ -188,6 +189,7 @@ func (d *deviceActions) load(device string) {
 		d.getMode = Commands.config + "?"
 		d.getUid = Commands.uid + "?"
 		d.getButton = Commands.button + "?"
+		d.getButtonl = Commands.buttonl + "?"
 		d.getSize = Commands.memory + "?"
 
 		d.selectSlot = Commands.setting + "="
@@ -204,6 +206,7 @@ func (d *deviceActions) load(device string) {
 		d.getMode = Commands.config + "?"
 		d.getUid = Commands.uid + "?"
 		d.getButton = Commands.button + "?"
+		d.getButtonl = Commands.buttonl + "?"
 		d.getSize = Commands.memory + "?"
 
 		d.selectSlot = Commands.setting + "="

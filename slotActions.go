@@ -8,13 +8,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var temp2 []string
 
-/*var temp string
+
 var myTime time.Time
-var GetSlotTicker *time.Ticker*/
+var GetUsbListTicker  *time.Ticker
 
 func buttonClicked(btn int) {
 
@@ -98,7 +99,7 @@ func applySlot() {
 			//set  button short
 			sendSerialCmd(Commands.button + "=" + s.btns.CurrentText())
 			//set button long
-			sendSerialCmd(Commands.lbutton + "=" + s.btnl.CurrentText())
+			sendSerialCmd(Commands.buttonl + "=" + s.btnl.CurrentText())
 		}
 	}
 	populateSlots()
@@ -525,7 +526,7 @@ func populateSlots() {
 			s.mode.SetCurrentIndex(modeindex)
 			s.mode.Repaint()
 
-			sendSerialCmd(DeviceActions.getButton)
+			sendSerialCmd(DeviceActions.getButtonl)
 			buttonl := SerialResponse.Payload
 			_, buttonlindex := getPosFromList(buttonl, TagButtons)
 			s.btnl.Clear()
@@ -546,33 +547,28 @@ func populateSlots() {
 	}
 }
 
-//func checkCurrentSelection() {
-//	//GetSlotTicker = time.NewTicker(time.Millisecond * 2000)
-//	var softSlot int
-//	//go func() {
-//		//for myTime = range GetSlotTicker.C {
-//			sendSerialCmd(DeviceActions.selectedSlot)
-//			selected := SerialResponse.Payload
-//			if Device == Devices.name[1] {
-//				hardSlot, _ := strconv.Atoi(selected)
-//				softSlot = hardSlot - 1
-//			} else {
-//				hardSlot, _ := strconv.Atoi(strings.Replace(selected, "NO.", "", 1))
-//				softSlot = hardSlot
-//			}
-//			log.Printf("Current Selected Slot: %d\n\n", softSlot+1)
-//			for i, s := range Slots {
-//				if s.slot.IsChecked() && i != softSlot {
-//					s.slot.SetChecked(false)
-//				} else {
-//					if !s.slot.IsChecked() && i == softSlot && populated {
-//						s.slot.SetChecked(true)
-//					}
-//				}
-//			}
-//		//}
-//	//}()
-//}
+func checkForDevices() {
+	GetUsbListTicker = time.NewTicker(time.Millisecond * 5000)
+	go func() {
+		for myTime = range GetUsbListTicker.C {
+			if !Connected {
+				serialPorts, err := getSerialPorts()
+				if err != nil {
+					log.Println(err)
+				}
+				serialPortSelect.Clear()
+				serialPortSelect.AddItems(serialPorts)
+				serialPortSelect.SetCurrentIndex(SelectedPortId)
+				serialPortSelect.Repaint()
+
+				deviceSelect.SetCurrentIndex(SelectedDeviceId)
+				deviceSelect.Repaint()
+			} else {
+				GetUsbListTicker.Stop()
+			}
+		}
+	}()
+}
 
 func getPosFromList(val string, array []string) (exists bool, index int) {
 	exists = false
