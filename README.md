@@ -14,7 +14,7 @@ ToDo Top-Topics:
 
 to install/create the qt-bindings follow the instuctions in the wiki: https://github.com/therecipe/qt/wiki
 
-there are also some pre-compiled binaries in the ['release-section'](https://github.com/WolfgangMau/chamgo-qt/releases/tag/v0.0.1-alpha)
+there are also some pre-compiled binaries in the ['release-section']https://github.com/WolfgangMau/chamgo-qt/releases)
 
 ### Screenshots
 #### Serial-Terminal
