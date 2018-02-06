@@ -60,6 +60,7 @@ func connectSerial(selSerialPort string) (err error) {
 
 		if selSerialPort == "" {
 			err = errors.New("no device given")
+			return
 		}
 
 		mode := &serial.Mode{
@@ -69,7 +70,7 @@ func connectSerial(selSerialPort string) (err error) {
 			StopBits: serial.OneStopBit,
 		}
 		serialPort, err = serial.Open(selSerialPort, mode)
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * 100)
 		serialPort.ResetInputBuffer()
 		serialPort.ResetOutputBuffer()
 		if err != nil {
@@ -99,7 +100,7 @@ func sendSerialCmd(cmd string) {
 	SerialResponse.Payload = ""
 
 	temp := sendSerial(cmd)
-	getSerialResponse(temp)
+	prepareResponse(temp)
 }
 
 func sendSerial(cmdStr string) string {
@@ -110,14 +111,14 @@ func sendSerial(cmdStr string) string {
 		if err != nil {
 			log.Println("errro send serial: ", err, cmdStr)
 		}
-		time.Sleep(time.Millisecond * 25)
+		time.Sleep(time.Millisecond * 50)
 		resp = receiveSerial()
 		c1 <- resp
 	}()
 	select {
 	case resp := <-c1:
 		return resp
-	case <-time.After(time.Second * 5):
+	case <-time.After(time.Second * 10):
 		log.Println("sendSrial Timeout")
 	}
 	return resp
@@ -126,12 +127,14 @@ func sendSerial(cmdStr string) string {
 func receiveSerial() (resp string) {
 	buff := make([]byte, 512)
 	var err error
-	var n = 1
+	var n = 0
 	var c = 0
-	n, err = serialPort.Read(buff)
-	c = c + n
-	if err != nil {
-		log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
+	for c < 6 {
+		n, err = serialPort.Read(buff)
+		if err != nil {
+			log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
+		}
+		c = c + n
 	}
 	return string(buff[:c])
 }
@@ -147,7 +150,7 @@ func deviceInfo(longInfo string) (shortInfo string) {
 	return
 }
 
-func getSerialResponse(res string) {
+func prepareResponse(res string) {
 	var result []string
 
 	res = strings.Replace(res, "\n", "#", -1)
@@ -155,7 +158,10 @@ func getSerialResponse(res string) {
 	res = strings.Replace(res, "##", "#", -1)
 	if !strings.Contains(res, ":") {
 		log.Println("no response given")
-		Connected = false
+		serialPort.ResetInputBuffer()
+		//serialPort.ResetOutputBuffer()
+		//Connected = false
+		//serialPort.Close()
 		return
 	}
 	temp2 = strings.Split(res, ":")

@@ -150,6 +150,7 @@ func activateSlots() {
 		}
 	}
 }
+
 //ToDO: implemetation
 func mfkey32Slots() {
 	for i, s := range Slots {
@@ -533,13 +534,22 @@ func checkForDevices() {
 				if err != nil {
 					log.Println(err)
 				}
-				serialPortSelect.Clear()
-				serialPortSelect.AddItems(serialPorts)
-				serialPortSelect.SetCurrentIndex(SelectedPortId)
-				serialPortSelect.Repaint()
+				if len(serialPorts) > 0 && serialPortSelect.CurrentText() != serialPorts[SelectedPortId] {
+					serialPortSelect.Clear()
+					serialPortSelect.AddItems(serialPorts)
+					serialPortSelect.SetCurrentIndex(SelectedPortId)
+					serialPortSelect.Repaint()
 
-				deviceSelect.SetCurrentIndex(SelectedDeviceId)
-				deviceSelect.Repaint()
+					deviceSelect.SetCurrentIndex(SelectedDeviceId)
+					deviceSelect.Repaint()
+					//Device = deviceSelect.CurrentText()
+					//Commands.load(Device)
+					//DeviceActions.load(Device)
+				} else {
+					if len(serialPorts) == 0 {
+						serialPortSelect.Clear()
+					}
+				}
 			} else {
 				GetUsbListTicker.Stop()
 			}

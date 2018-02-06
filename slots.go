@@ -57,71 +57,65 @@ func allSlots() *widgets.QWidget {
 	slotsTabLayout := widgets.NewQGridLayout(nil)
 	slotsTabPage := widgets.NewQWidget(nil, 0)
 	var c = 0
+	//two rows
 	for i := 0; i <= 1; i++ {
 		Slotlayouts[i].l = widgets.NewQHBoxLayout()
 		Slotlayouts[i].l.SetAlign(33)
 
-		//SlotGroupVlayouts[i].l = widgets.NewQVBoxLayout()
-		//SlotGroupVlayouts[i].l.SetAlign(33)
+		SlotGroupVlayouts[i].l = widgets.NewQVBoxLayout()
+		SlotGroupVlayouts[i].l.SetAlign(33)
 
-		//var gc=0
+		//4 columms
 		for s := 0; s <= 3; s++ {
-			/************* Slot checkbox ************/
-			SlotHlayouts[i].l = widgets.NewQHBoxLayout()
-			SlotHlayouts[i].l.SetContentsMargins(10, 0, 0, 0)
-			SlotHlayouts[i].l.Stretch(1)
-
-			Slots[c].slotl = widgets.NewQLabel(nil, 0)
-
-			Slots[c].slotl.SetText("Slot " + strconv.Itoa(c+1))
-			Slots[c].slotl.SetContentsMargins(10, 0, 0, 0)
-			Slots[c].slotl.SetFont(bold)
-
-			Slots[c].slot = widgets.NewQCheckBox(nil)
-			Slots[c].slot.SetChecked(false)
-
-			SlotHlayouts[i].l.AddWidget(Slots[c].slot, 0, 0x0001)
-			SlotHlayouts[i].l.AddWidget(Slots[c].slotl, 1, 0x0001)
-
-			/************* Slot Group ************/
 			boxlayout := widgets.NewQGridLayout(nil)
 			boxlayout.SetAlign(33)
 
+			/************* Slot checkbox ************/
+			Slots[c].slotl = widgets.NewQLabel(nil, 0)
+			Slots[c].slotl.SetText("Slot " + strconv.Itoa(c+1))
+			Slots[c].slotl.SetContentsMargins(10, 0, 0, 0)
+			Slots[c].slotl.SetFont(bold)
+			Slots[c].slot = widgets.NewQCheckBox(nil)
+			Slots[c].slot.SetChecked(false)
+			boxlayout.AddWidget(Slots[c].slotl, 0, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].slot, 0, 1, 0x0001)
+
+			/************* Slot Group ************/
 			Slots[c].model = widgets.NewQLabel(nil, 0)
 			Slots[c].model.SetText("Mode")
 			Slots[c].mode = widgets.NewQComboBox(nil)
 			Slots[c].mode.SetFixedWidth(127)
-			boxlayout.AddWidget(Slots[c].model, 0, 0, 0x0001)
-			boxlayout.AddWidget(Slots[c].mode, 0, 1, 0x0001)
+			boxlayout.AddWidget(Slots[c].model, 1, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].mode, 1, 1, 0x0001)
 
 			Slots[c].uidl = widgets.NewQLabel(nil, 0)
 			Slots[c].uidl.SetText("UID")
 			Slots[c].uid = widgets.NewQLineEdit(nil)
 			Slots[c].uid.SetFixedWidth(121)
-			boxlayout.AddWidget(Slots[c].uidl, 1, 0, 0x0001)
-			boxlayout.AddWidget(Slots[c].uid, 1, 1, 0x0001)
+			boxlayout.AddWidget(Slots[c].uidl, 2, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].uid, 2, 1, 0x0001)
 
 			Slots[c].btnsl = widgets.NewQLabel(nil, 0)
 			Slots[c].btnsl.SetText("Btn Short")
 			Slots[c].btns = widgets.NewQComboBox(nil)
 			Slots[c].btns.SetFixedWidth(127)
-			boxlayout.AddWidget(Slots[c].btnsl, 2, 0, 0x0001)
-			boxlayout.AddWidget(Slots[c].btns, 2, 1, 0x0001)
+			boxlayout.AddWidget(Slots[c].btnsl, 3, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].btns, 3, 1, 0x0001)
 
 			Slots[c].btnll = widgets.NewQLabel(nil, 0)
 			Slots[c].btnll.SetText("Btn Long")
 			Slots[c].btnl = widgets.NewQComboBox(nil)
 			Slots[c].btnl.SetFixedWidth(127)
-			boxlayout.AddWidget(Slots[c].btnll, 3, 0, 0x0001)
-			boxlayout.AddWidget(Slots[c].btnl, 3, 1, 0x0001)
+			boxlayout.AddWidget(Slots[c].btnll, 4, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].btnl, 4, 1, 0x0001)
 
 			Slots[c].sizel = widgets.NewQLabel(nil, 0)
 			Slots[c].sizel.SetText("Size")
 			Slots[c].size = widgets.NewQLineEdit(nil)
 			Slots[c].size.SetDisabled(true)
 			Slots[c].size.SetFixedWidth(121)
-			boxlayout.AddWidget(Slots[c].sizel, 4, 0, 0x0001)
-			boxlayout.AddWidget(Slots[c].size, 4, 1, 0x0001)
+			boxlayout.AddWidget(Slots[c].sizel, 5, 0, 0x0001)
+			boxlayout.AddWidget(Slots[c].size, 5, 1, 0x0001)
 
 			SlotGrouplayout := widgets.NewQVBoxLayout()
 			SlotGrouplayout.AddLayout(boxlayout, 0)
@@ -131,9 +125,9 @@ func allSlots() *widgets.QWidget {
 
 			SlotGroupVlayouts[i].l = widgets.NewQVBoxLayout()
 			SlotGroupVlayouts[i].l.SetSpacing(0)
-			SlotGroupVlayouts[i].l.AddLayout(SlotHlayouts[i].l, 0)
+			//SlotGroupVlayouts[i].l.AddLayout(SlotHlayouts[i].l, 0)
 			SlotGroupVlayouts[i].l.AddWidget(Slotboxes[i].b, 1, 0x0001)
-
+			//
 			slotsTabLayout.AddLayout(SlotGroupVlayouts[i].l, i, s, 0x0020)
 
 			c++

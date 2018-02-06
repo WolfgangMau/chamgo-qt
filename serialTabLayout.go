@@ -14,7 +14,6 @@ var (
 )
 
 func serialTab() *widgets.QWidget {
-
 	serialTabLayout := widgets.NewQHBoxLayout()
 	serialTabPage := widgets.NewQWidget(nil, 0)
 
