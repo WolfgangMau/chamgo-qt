@@ -7,10 +7,9 @@ what works in general:
 - display Slot-Config
 - change Slot-Config
 - Serial-Terminal
+- upload dump
+- download dump (except for linux)
 
-ToDo Top-Topics:
-- LFU-Connection
-- Dump upload/download (xmodem)
 
 to install/create the qt-bindings follow the instuctions in the wiki: https://github.com/therecipe/qt/wiki
 
