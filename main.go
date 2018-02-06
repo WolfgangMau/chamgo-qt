@@ -26,7 +26,6 @@ func main() {
 	tabWidget := widgets.NewQTabWidget(nil)
 	tabWidget.AddTab(allSlots(), "Tags")
 	tabWidget.AddTab(serialTab(), "Serial")
-	//tabWidget.SetFixedSize2(800,500)
 	tabWidget.SetCurrentIndex(1)
 
 	mainlayout.AddWidget(tabWidget, 0, 0x0020)

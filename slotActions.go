@@ -13,9 +13,8 @@ import (
 
 var temp2 []string
 
-
 var myTime time.Time
-var GetUsbListTicker  *time.Ticker
+var GetUsbListTicker *time.Ticker
 
 func buttonClicked(btn int) {
 
@@ -24,13 +23,11 @@ func buttonClicked(btn int) {
 	case "Select All":
 		selectAllSlots(true)
 		if populated {
-			//GetSlotTicker.Stop()
 		}
 
 	case "Select None":
 		selectAllSlots(false)
 		if populated {
-			//GetSlotTicker.Stop()
 		}
 
 	case "Apply":
@@ -81,10 +78,8 @@ func selectAllSlots(b bool) {
 }
 
 func applySlot() {
-	//GetSlotTicker.Stop()
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
-			log.Printf("********************\nupdating %s\n", s.slotl.Text())
 			hardwareSlot := i
 			if Device == Devices.name[1] {
 				hardwareSlot = i + 1
@@ -130,6 +125,7 @@ func clearSlot() {
 			sendSerialCmd(DeviceActions.clearSlot)
 		}
 	}
+	time.Sleep(time.Millisecond * 50)
 	populateSlots()
 }
 
@@ -154,7 +150,7 @@ func activateSlots() {
 		}
 	}
 }
-
+//ToDO: implemetation
 func mfkey32Slots() {
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
@@ -163,14 +159,6 @@ func mfkey32Slots() {
 		}
 	}
 }
-
-//type packet struct {
-//	proto   byte
-//	block   int
-//	rblocks int
-//	data    []byte
-//	chk     byte
-//}
 
 func uploadSlots() bool {
 	if countSelected() > 1 {
@@ -188,13 +176,11 @@ func uploadSlots() bool {
 
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
-			//log.Printf("********************\nupdating %s\n", s.slotl.Text())
 			hardwareSlot := i
 			if Device == Devices.name[1] {
 				hardwareSlot = i + 1
 			}
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
-			//log.Printf("upoload %s to Slot %d\n", filename, i)
 			// Open file
 			log.Printf("loading file %s\n", filename)
 			fIn, err := os.Open(filename)
@@ -361,8 +347,8 @@ func downloadSlots() {
 				var protocmd []byte
 				protocmd = append(protocmd, NAK)
 				var (
-					success     = 0
-					failed      = 0
+					success = 0
+					failed  = 0
 				)
 
 				var getBytes = true
@@ -383,8 +369,6 @@ func downloadSlots() {
 						log.Println(err)
 						break
 					}
-					//rotocmd[0] = oBuffer[0]
-					log.Printf("Anser to 0x%X -> 0x%X\n", protocmd[0], oBuffer[0])
 
 					//start receiving blocks
 					if getBytes {
@@ -392,23 +376,19 @@ func downloadSlots() {
 						bytesReceived := 0
 						blockReceived := false
 						for !blockReceived {
+							time.Sleep(time.Millisecond * 25)
 							n, err := serialPort.Read(dBuffer)
 							bytesReceived = bytesReceived + n
 							if err != nil {
 								log.Println("Read failed:", err)
 							}
 
-							log.Printf("bytesReceived: %d - n: %d\n", bytesReceived, n)
-
-
 							if bytesReceived >= 131 {
-								log.Printf("Received: (offset: 0)\n%X\n", dBuffer[:bytesReceived])
 								myPacket.proto = oBuffer
 								myPacket.packetNum = int(dBuffer[0])
 								myPacket.packetInv = int(dBuffer[1])
 								myPacket.payload = dBuffer[2:130]
 								myPacket.checksumm = int(dBuffer[130])
-								log.Printf("Received: \n%X\n", dBuffer[:bytesReceived])
 
 								CHK := int(checksum(myPacket.payload, 0))
 								if CHK == myPacket.checksumm && myPacket.checkPaylod() {
@@ -423,7 +403,6 @@ func downloadSlots() {
 
 										if byte(myPacket.packetNum) == EOF || byte(myPacket.packetNum) == EOT {
 											//EOT & EOF are no failures
-											log.Printf("EOF or EOT received (0x%X)\n",byte(myPacket.packetNum))
 											failed--
 										} else {
 											//message for sender
@@ -434,15 +413,14 @@ func downloadSlots() {
 										}
 									}
 									//stop transfer
-									log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n",myPacket.packetNum,bytesReceived,dBuffer[:bytesReceived])
+									//log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n", myPacket.packetNum, bytesReceived, dBuffer[:bytesReceived])
 									failed-- //the last packet checksum must have missmatched - no error!
 									protocmd[0] = CAN
 									getBytes = false
 								}
-								blockReceived=true
+								blockReceived = true
 							}
 						}
-						log.Printf("received %d bytes\n", bytesReceived)
 					}
 				}
 				log.Printf("Success: %d - failed: %d\n", success, failed)
@@ -452,8 +430,7 @@ func downloadSlots() {
 				break
 			}
 
-			slotsize,_:=strconv.Atoi(s.size.Text())
-			if data.Len() == slotsize {
+			if data.Len() > 0 {
 				log.Printf("got %d bytes to write to %s... ", data.Len(), filename)
 				// Write file
 				fOut, err := os.Create(filename)
@@ -466,7 +443,7 @@ func downloadSlots() {
 
 				log.Println(filename, " - write successful")
 			} else {
-				log.Printf("got only %d from %d expected bytes - file not written",data.Len(),slotsize)
+				log.Printf("got only %d bytes - file not written", data.Len())
 			}
 		}
 	}
@@ -591,6 +568,4 @@ func (pb *progressBar) update(c int) {
 
 func (pb *progressBar) zero() {
 	pb.widget.Reset()
-	//pb.widget.SetValue(0)
-	//pb.widget.Repaint()
 }

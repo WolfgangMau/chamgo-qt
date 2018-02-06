@@ -9,8 +9,8 @@ import (
 var (
 	serialSendButton *widgets.QPushButton
 	serialMonitor    *widgets.QPlainTextEdit
-	serialPortSelect  *widgets.QComboBox
-	deviceSelect *widgets.QComboBox
+	serialPortSelect *widgets.QComboBox
+	deviceSelect     *widgets.QComboBox
 )
 
 func serialTab() *widgets.QWidget {
@@ -83,7 +83,6 @@ func serialTab() *widgets.QWidget {
 					buttonClicked(0)
 					buttonClicked(4)
 					buttonClicked(1)
-
 
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",

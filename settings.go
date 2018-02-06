@@ -166,11 +166,11 @@ type deviceActions struct {
 	getButtons  string
 	getButtonsl string
 	//slot info
-	getMode   string
-	getUid    string
-	getButton string
+	getMode    string
+	getUid     string
+	getButton  string
 	getButtonl string
-	getSize   string
+	getSize    string
 	//actions
 	selectSlot    string
 	selectedSlot  string

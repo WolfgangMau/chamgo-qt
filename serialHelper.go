@@ -2,11 +2,9 @@ package main
 
 import (
 	"errors"
-	//newSerial "github.com/tarm/serial"
 	"go.bug.st/serial.v1"
 	"go.bug.st/serial.v1/enumerator"
 	"log"
-	//"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -59,7 +57,6 @@ func getSerialPorts() (usbports []string, perr error) {
 func connectSerial(selSerialPort string) (err error) {
 	c1 := make(chan int, 1)
 	go func() {
-		//time.Sleep(time.Second * 1)
 
 		if selSerialPort == "" {
 			err = errors.New("no device given")
@@ -72,9 +69,9 @@ func connectSerial(selSerialPort string) (err error) {
 			StopBits: serial.OneStopBit,
 		}
 		serialPort, err = serial.Open(selSerialPort, mode)
-		//c := &newSerial.Config{Name: selSerialPort, Baud: 115200, ReadTimeout: time.Millisecond * 200}
-		/*c := &newSerial.Config{Name: selSerialPort, Baud: 115200}
-		serialPort, err = newSerial.OpenPort(c)*/
+		time.Sleep(time.Millisecond * 50)
+		serialPort.ResetInputBuffer()
+		serialPort.ResetOutputBuffer()
 		if err != nil {
 			log.Println("error serial connect ", err)
 		} else {
@@ -85,7 +82,6 @@ func connectSerial(selSerialPort string) (err error) {
 	case res := <-c1:
 		log.Printf("serialPort %v  connected - res: %d\n", serialPort, res)
 	case <-time.After(time.Second * 2):
-		//log.Println("serial connection timeout")
 		err = errors.New("serial connection timeout")
 	}
 
@@ -97,7 +93,6 @@ func connectSerial(selSerialPort string) (err error) {
 }
 
 func sendSerialCmd(cmd string) {
-	//reset response-struct
 	SerialResponse.Cmd = cmd
 	SerialResponse.Code = -1
 	SerialResponse.String = ""
@@ -108,60 +103,37 @@ func sendSerialCmd(cmd string) {
 }
 
 func sendSerial(cmdStr string) string {
-	var temp string
-	c1 := make(chan string, 1)
+	var resp string
+	c1 := make(chan string)
 	go func() {
-		//time.Sleep(time.Second * 2)
 		_, err := serialPort.Write([]byte(cmdStr + "\r\n"))
 		if err != nil {
 			log.Println("errro send serial: ", err, cmdStr)
 		}
-		//log.Printf("len = %d - crlf= %X\n", len([]byte("\r\n")), []byte("\r\n"))
-		temp = receiveSerial()
-		//log.Printf("serialReceive : %s\n", temp)
-		//if len(temp) < 6 {
-		//	temp = temp + receiveSerial()
-		//}
-		c1 <- temp
+		time.Sleep(time.Millisecond * 25)
+		resp = receiveSerial()
+		c1 <- resp
 	}()
 	select {
-	case res := <-c1:
-		return res
+	case resp := <-c1:
+		return resp
 	case <-time.After(time.Second * 5):
 		log.Println("sendSrial Timeout")
 	}
-	return temp
+	return resp
 }
 
 func receiveSerial() (resp string) {
-	buff := make([]byte, 1024)
+	buff := make([]byte, 512)
 	var err error
 	var n = 1
 	var c = 0
-
-	for n > 0 {
-		c++
-		n, _ = serialPort.Read(buff)
-		//log.Printf("n: %d\n", n)
-		if err != nil {
-			log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
-		}
-		//log.Printf("n: %d\n", n)
-		if n > 0 {
-			resp = resp + string(buff[:n])
-			//check if there is a CRLF at the end
-			if len(resp) >= 2 && resp[(len(resp)-2):] == string([]byte{0x0D, 0x0A}) {
-				//log.Println("receiveSerial -> EOL")
-				n = 0
-			}
-			//log.Printf("fresh read of %d bytes - temp: %s\n", n, resp)
-		}
+	n, err = serialPort.Read(buff)
+	c = c + n
+	if err != nil {
+		log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
 	}
-
-	//log.Printf("end of loop %d -  n: %d - Buffer: %s\n", c, n, resp)
-	n = len(resp)
-	//log.Printf("loops= %d  bytes= %d\n", c, n)
-	return resp
+	return string(buff[:c])
 }
 
 func deviceInfo(longInfo string) (shortInfo string) {
@@ -172,8 +144,6 @@ func deviceInfo(longInfo string) (shortInfo string) {
 	} else {
 		shortInfo = longInfo
 	}
-
-	//log.Printf("Long : %s -> toks : %d -> short : %s\n", longInfo, len(toks), shortInfo)
 	return
 }
 
@@ -206,17 +176,5 @@ func getSerialResponse(res string) {
 				}
 			}
 		}
-		//dumpResp(SerialResponse)
 	}
 }
-
-//func dumpResp(t serialResponse) {
-//	s := reflect.ValueOf(&t).Elem()
-//	typeOfT := s.Type()
-//
-//	for i := 0; i < s.NumField(); i++ {
-//		f := s.Field(i)
-//		log.Printf("%d: %s %s = %v\n", i,
-//			typeOfT.Field(i).Name, f.Type(), f.Interface())
-//	}
-//}
