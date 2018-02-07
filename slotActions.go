@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/WolfgangMau/chamgo-qt/xmodem"
 )
 
 var temp2 []string
@@ -195,18 +196,19 @@ func uploadSlots() bool {
 			}
 			fIn.Close()
 
-			var p []xblock
-			var p1 xblock
-			for _, d := range data {
-				p1.payload = append(p1.payload, d)
+			var p []xmodem.Xblock
+			var p1 xmodem.Xblock
 
-				if len(p1.payload) == 128 {
-					p1.proto = []byte{SOH}
-					p1.packetNum = len(p)
-					p1.packetInv = 255 - p1.packetNum
-					p1.checksumm = int(checksum(p1.payload, 0))
+			for _, d := range data {
+				p1.Payload = append(p1.Payload, d)
+
+				if len(p1.Payload) == 128 {
+					p1.Proto = []byte{xmodem.SOH}
+					p1.PacketNum = len(p)
+					p1.PacketInv = 255 - p1.PacketNum
+					p1.Checksum = int(xmodem.Checksum(p1.Payload, 0))
 					p = append(p, p1)
-					p1.payload = []byte("")
+					p1.Payload = []byte("")
 				}
 			}
 
@@ -214,7 +216,7 @@ func uploadSlots() bool {
 			sendSerialCmd(DeviceActions.startUpload)
 			if SerialResponse.Code == 110 {
 				//start uploading packets
-				xmodemSend(p)
+				xmodem.Send(serialPort, p)
 			}
 		}
 	}
@@ -222,39 +224,6 @@ func uploadSlots() bool {
 	return true
 }
 
-func sendPacket(p xblock) {
-
-	var sp []byte
-	sp = append(sp, p.proto[0])
-	sp = append(sp, byte(p.packetNum)+1)
-	sp = append(sp, byte(byte(255)-byte(p.packetNum)-1))
-	for _, b := range p.payload {
-		sp = append(sp, b)
-	}
-	sp = append(sp, byte(p.checksumm))
-	serialPort.Write(sp)
-}
-
-func checksum(b []byte, cs byte) byte {
-	for _, d := range b {
-		cs = cs + d
-	}
-	return cs
-}
-
-//returns false if all payload-bytes are set to 0xff
-func (p xblock) checkPaylod() bool {
-	var counter = 0
-	for _, b := range p.payload {
-		if b == 0xff {
-			counter++
-		}
-	}
-	if counter == len(p.payload) {
-		return false
-	}
-	return true
-}
 
 func downloadSlots() {
 	if countSelected() > 1 {
@@ -287,11 +256,11 @@ func downloadSlots() {
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.startDownload)
 			if SerialResponse.Code == 110 {
-			success, failed, data  = xmodemRead()
+			success, failed, data  = xmodem.Receive(serialPort)
 
 				log.Printf("Success: %d - failed: %d\n", success, failed)
 			}
-			if _, err := serialPort.Write([]byte{CAN}); err != nil {
+			if _, err := serialPort.Write([]byte{xmodem.CAN}); err != nil {
 				log.Println(err)
 				break
 			}

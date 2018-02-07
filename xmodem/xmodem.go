@@ -1,12 +1,30 @@
-package main
+package xmodem
 
 import (
 	"log"
 	"bytes"
 	"time"
+	"go.bug.st/serial.v1"
 )
 
-func xmodemRead() (success int, failed int, data bytes.Buffer){
+//xmodem
+const SOH byte = 0x01
+const STX byte = 0x02
+const EOT byte = 0x04
+const EOF byte = 0x1a
+const ACK byte = 0x06
+const NAK byte = 0x15
+const CAN byte = 0x18
+
+type Xblock struct {
+	Proto     []byte // 1 byte protocol (SOH / STX)
+	PacketNum int    // 1 byte current Packet number
+	PacketInv int    // 1 byte (0xff-packetNum)
+	Payload   []byte // 128 byte payload
+	Checksum int    // 1 byte complement checksum of the payload
+}
+
+func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer){
 
 	oBuffer := make([]byte, 1)
 	dBuffer := make([]byte, 1024)
@@ -39,7 +57,7 @@ func xmodemRead() (success int, failed int, data bytes.Buffer){
 
 		//start receiving blocks
 		if getBytes {
-			myPacket := xblock{}
+			myPacket := Xblock{}
 			bytesReceived := 0
 			blockReceived := false
 			for !blockReceived {
@@ -51,24 +69,24 @@ func xmodemRead() (success int, failed int, data bytes.Buffer){
 				}
 
 				if bytesReceived >= 131 {
-					myPacket.proto = oBuffer
-					myPacket.packetNum = int(dBuffer[0])
-					myPacket.packetInv = int(dBuffer[1])
-					myPacket.payload = dBuffer[2:130]
-					myPacket.checksumm = int(dBuffer[130])
+					myPacket.Proto = oBuffer
+					myPacket.PacketNum = int(dBuffer[0])
+					myPacket.PacketInv = int(dBuffer[1])
+					myPacket.Payload = dBuffer[2:130]
+					myPacket.Checksum = int(dBuffer[130])
 
-					CHK := int(checksum(myPacket.payload, 0))
-					if CHK == myPacket.checksumm && myPacket.checkPaylod() {
+					CHK := int(Checksum(myPacket.Payload, 0))
+					if CHK == myPacket.Checksum && myPacket.checkPaylod() {
 						//packet OK
-						log.Printf("Checksum OK for Packet: %d\n", myPacket.packetNum)
+						log.Printf("Checksum OK for Packet: %d\n", myPacket.PacketNum)
 						protocmd[0] = ACK
 						success++
-						data.Write(myPacket.payload)
+						data.Write(myPacket.Payload)
 					} else {
 						//something went wrong
 						if !myPacket.checkPaylod() && failed < 10 {
 
-							if byte(myPacket.packetNum) == EOF || byte(myPacket.packetNum) == EOT {
+							if byte(myPacket.PacketNum) == EOF || byte(myPacket.PacketNum) == EOT {
 								//EOT & EOF are no failures
 								failed--
 							} else {
@@ -94,7 +112,7 @@ func xmodemRead() (success int, failed int, data bytes.Buffer){
 }
 
 
-func xmodemSend( p []xblock) {
+func Send(serialPort serial.Port, p []Xblock) {
 	oBuffer := make([]byte, 1)
 	failure := 0
 	success := 0
@@ -103,14 +121,14 @@ func xmodemSend( p []xblock) {
 		var reSend = true
 		for reSend {
 			//log.Printf("send Packet: %d\n", sp.packetNum)
-			sendPacket(sp)
+			sendPacket(serialPort, sp)
 			if _, err := serialPort.Read(oBuffer); err != nil {
 				log.Println(err)
 			} else {
 				switch oBuffer[0] {
 				case NAK: // NAK
 					//receiver ask for retransmission of this block
-					log.Printf("resend Packet %d\n", sp.packetNum)
+					log.Printf("resend Packet %d\n", sp.PacketNum)
 					reSend = true
 					failure++
 				case ACK: // ACK
@@ -119,12 +137,12 @@ func xmodemSend( p []xblock) {
 					success++
 				case CAN: // CAN
 					//receiver wants to quit session
-					log.Printf("receiver aborted transmission at Packet %d\n", sp.packetNum)
+					log.Printf("receiver aborted transmission at Packet %d\n", sp.PacketNum)
 					reSend = false
 					failure++
 				default:
 					//should not happen
-					log.Printf("unexspected answer(0x%X) for packet %d\n", oBuffer[0], sp.packetNum)
+					log.Printf("unexspected answer(0x%X) for packet %d\n", oBuffer[0], sp.PacketNum)
 					reSend = false
 				}
 			}
@@ -153,4 +171,39 @@ func xmodemSend( p []xblock) {
 
 		}
 	}
+}
+
+
+func Checksum(b []byte, cs byte) byte {
+	for _, d := range b {
+		cs = cs + d
+	}
+	return cs
+}
+
+//returns false if all payload-bytes are set to 0xff
+func (p Xblock) checkPaylod() bool {
+	var counter = 0
+	for _, b := range p.Payload {
+		if b == 0xff {
+			counter++
+		}
+	}
+	if counter == len(p.Payload) {
+		return false
+	}
+	return true
+}
+
+func sendPacket(serialPort serial.Port, p Xblock) {
+
+	var sp []byte
+	sp = append(sp, p.Proto[0])
+	sp = append(sp, byte(p.PacketNum)+1)
+	sp = append(sp, byte(byte(255)-byte(p.PacketNum)-1))
+	for _, b := range p.Payload {
+		sp = append(sp, b)
+	}
+	sp = append(sp, byte(p.Checksum))
+	serialPort.Write(sp)
 }

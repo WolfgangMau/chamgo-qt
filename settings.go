@@ -1,22 +1,5 @@
 package main
 
-//xmodem
-const SOH byte = 0x01
-const STX byte = 0x02
-const EOT byte = 0x04
-const EOF byte = 0x1a
-const ACK byte = 0x06
-const NAK byte = 0x15
-const CAN byte = 0x18
-
-type xblock struct {
-	proto     []byte // 1 byte protocol (SOH / STX)
-	packetNum int    // 1 byte current Packet number
-	packetInv int    // 1 byte (0xff-packetNum)
-	payload   []byte // 128 byte payload
-	checksumm int    // 1 byte complement checksum of the payload
-}
-
 var populated = false
 var TagModes []string
 var TagButtons []string
