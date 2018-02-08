@@ -26,7 +26,6 @@ device:
   name: "RevE-Rebooted"
   cdc: "Atmel Corporation LUFA CDC"
   cmdset:
-    # RevG
     version: VERSION
     config: CONFIG
     uid: UID
