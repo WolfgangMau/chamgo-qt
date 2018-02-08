@@ -1,0 +1,75 @@
+device:
+- name: "RevE-Rebooted"
+  vendor: "03eb"
+  product: "2044"
+  name: "RevE-Rebooted"
+  cdc: "Atmel Corporation LUFA CDC"
+  cmdset: # RevE-Rebooted
+    version: VERSIONMY
+    config: CONFIGMY
+    uid: UIDMY
+    upload: UPLOADMY
+    download: DOWNLOADMY
+    reset: RESETMY
+    upgrade: UPGRADEMY
+    memory: MEMORYMY
+    uidsize: UIDSIZEMY
+    button: BUTTONMY
+    buttonl: BUTTON_LONGMY
+    setting: SETTINGMY
+    clear: CLEARMY
+    help: HELPMY
+    rssi: RSSIMY
+- name: "RevG"
+  vendor: "03eb"
+  product: "2044"
+  name: "RevE-Rebooted"
+  cdc: "Atmel Corporation LUFA CDC"
+  cmdset:
+    # RevG
+    version: VERSION
+    config: CONFIG
+    uid: UID
+    readonly: READONLY
+    upload: UPLOAD
+    download: DOWNLOAD
+    reset: RESET
+    upgrade: UPGRADE
+    memory: MEMORY
+    uidsize: UIDSIZE
+    button: BUTTON
+    buttonl: BUTTON_LONG
+    rbutton: RBUTTON
+    rbuttonl: RBUTTON_LONG
+    lbutton: LBUTTON
+    lbuttonl: LBUTTON_LONG
+    setting: SETTING
+    clear: CLEAR
+    help: HELP
+    rssi: RSSI
+    ledgreen: LEDGREEN
+    ledred: LEDRED
+    logmode: LOGMODE
+    logmem: LOGMEM
+    logdownload: LOGDOWNLOAD
+    logstore: LOGSTORE
+    logclear: LOGCLEAR
+    store: STORE
+    recall: RECALL
+    charging: CHARGING
+    systick: SYSTICK
+    sendraw: SEND_RAW
+    send: SED
+    getuid: GETUID
+    dumpmfu: DUMP_MFU
+    identify: IDENTIFY
+    timeout: TIMEOUT
+    threshold: THRESHOLD
+    autocalibrate: AUTOCALIBRATE
+    field: FIELD
+serial:
+  waitforreceive: 25
+  connectiontimeout: 5
+gui:
+  title: "config test"
+

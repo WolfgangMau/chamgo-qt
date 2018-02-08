@@ -75,7 +75,7 @@ type commands struct {
 	timeout       string
 	threshold     string
 	autocalibrate string
-	filed         string
+	field         string
 }
 
 func (c *commands) load(device string) {
@@ -137,7 +137,7 @@ func (c *commands) load(device string) {
 		c.timeout = "TIMEOUT"
 		c.threshold = "THRESHOLD"
 		c.autocalibrate = "AUTOCALIBRATE"
-		c.filed = "FIELD"
+		c.field = "FIELD"
 	}
 }
 
