@@ -3,7 +3,7 @@ device:
   vendor: "09d8"
   product: "0420"
   cdc: "09d8 RFID Device (CDC) "
-- name: "RevE-Rebooted"
+- name: "Chameleon RevE-Rebooted"
   vendor: "03eb"
   product: "2044"
   cdc: "Atmel Corporation LUFA CDC"
@@ -32,7 +32,7 @@ device:
     clear: CLEARMY
     help: HELPMY
     rssi: RSSIMY
-- name: "RevG"
+- name: "Chameleon RevG"
   vendor: "16d0"
   product: "04b2"
   cdc: "KAOS Chameleon-Mini"

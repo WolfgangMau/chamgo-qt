@@ -60,7 +60,7 @@ func getSerialPorts() (usbports []string, perr error) {
 			}
 		}
 	}
-
+	log.Printf("SelectedPortId: %d - SerialDevice1: %s - SelectedDeviceId: %d\n",SelectedPortId,SerialDevice1,SelectedDeviceId)
 	return usbports, nil
 }
 

@@ -72,7 +72,7 @@ func serialTab() *widgets.QWidget {
 					serialSendButton.Repaint()
 					//checkForDevices()
 				}
-				//web got a expected answer from the VERSION(MY) cmd
+				//we got a expected answer from the VERSION(MY) cmd
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true

@@ -22,7 +22,7 @@ var TagButtons []string
 //	d.cdc = []string{"Atmel Corporation LUFA CDC", "KAOS Chameleon-Mini"}
 //}
 
-var ActionButtons []string
+var ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
 
 var SerialResponse serialResponse
 

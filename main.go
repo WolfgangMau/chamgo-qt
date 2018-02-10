@@ -25,7 +25,6 @@ func main() {
 	//	log.Printf("--- m dump:\n%s\n\n", string(d))
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Connected = false
-	ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
 
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
