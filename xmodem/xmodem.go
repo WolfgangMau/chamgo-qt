@@ -118,8 +118,8 @@ func Send(serialPort serial.Port, p []Xblock) {
 	success := 0
 	//log.Printf("start sending %d Packets of %d bytes payload\n", len(p), len(p[0].payload))
 	for _, sp := range p {
-		var reSend = true
-		for reSend {
+		var resend = true //init - we need to read at least once
+		for resend {
 			//log.Printf("send Packet: %d\n", sp.packetNum)
 			sendPacket(serialPort, sp)
 			if _, err := serialPort.Read(oBuffer); err != nil {
@@ -129,21 +129,22 @@ func Send(serialPort serial.Port, p []Xblock) {
 				case NAK: // NAK
 					//receiver ask for retransmission of this block
 					log.Printf("resend Packet %d\n", sp.PacketNum)
-					reSend = true
+					resend = true
 					failure++
 				case ACK: // ACK
 					//receiver accepted this block
-					reSend = false
+					resend = false // packet was accepted, no need to resend the packet
 					success++
 				case CAN: // CAN
 					//receiver wants to quit session
 					log.Printf("receiver aborted transmission at Packet %d\n", sp.PacketNum)
-					reSend = false
+					resend = false //quit session, no need to resend the packet
 					failure++
 				default:
 					//should not happen
 					log.Printf("unexspected answer(0x%X) for packet %d\n", oBuffer[0], sp.PacketNum)
-					reSend = false
+					resend = true // better to read the packet again, hopefully no endless loop ;-)
+					failure++
 				}
 			}
 		}

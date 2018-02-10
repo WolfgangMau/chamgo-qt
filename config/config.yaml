@@ -1,9 +1,21 @@
 device:
+- name: "TWN4"
+  vendor: "09d8"
+  product: "0420"
+  cdc: "09d8 RFID Device (CDC) "
 - name: "RevE-Rebooted"
   vendor: "03eb"
   product: "2044"
-  name: "RevE-Rebooted"
   cdc: "Atmel Corporation LUFA CDC"
+  config:
+    slot:
+      selected: 7
+      offset: 0
+      first: 0
+      last: 7
+    label:
+      rbutton: "RButtonS"
+      rbuttonlong: "RButtonL"
   cmdset: # RevE-Rebooted
     version: VERSIONMY
     config: CONFIGMY
@@ -12,7 +24,7 @@ device:
     download: DOWNLOADMY
     reset: RESETMY
     upgrade: UPGRADEMY
-    memory: MEMORYMY
+    memory: MEMSIZEMY
     uidsize: UIDSIZEMY
     button: BUTTONMY
     buttonl: BUTTON_LONGMY
@@ -21,10 +33,18 @@ device:
     help: HELPMY
     rssi: RSSIMY
 - name: "RevG"
-  vendor: "03eb"
-  product: "2044"
-  name: "RevE-Rebooted"
-  cdc: "Atmel Corporation LUFA CDC"
+  vendor: "16d0"
+  product: "04b2"
+  cdc: "KAOS Chameleon-Mini"
+  config:
+    slot:
+      selected: 4
+      offset: 1
+      first: 1
+      last: 8
+    label:
+      rbutton: "RButtonS"
+      rbuttonlong: "RButtonL"
   cmdset:
     version: VERSION
     config: CONFIG
@@ -34,10 +54,10 @@ device:
     download: DOWNLOAD
     reset: RESET
     upgrade: UPGRADE
-    memory: MEMORY
+    memory: MEMSIZE
     uidsize: UIDSIZE
-    button: BUTTON
-    buttonl: BUTTON_LONG
+    button: RBUTTON
+    buttonl: RBUTTON_LONG
     rbutton: RBUTTON
     rbuttonl: RBUTTON_LONG
     lbutton: LBUTTON
@@ -69,6 +89,6 @@ device:
 serial:
   waitforreceive: 25
   connectiontimeout: 5
+  autoconnect: false
 gui:
   title: "config test"
-

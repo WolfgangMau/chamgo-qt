@@ -16,8 +16,16 @@ var SelectedDeviceId int
 
 var SerialDevice1 string
 
+func getDeviceNames() []string {
+	var dn []string
+	for _,d := range Cfg.Device {
+		dn = append(dn, d.Name)
+	}
+	return dn
+}
+
 func getSerialPorts() (usbports []string, perr error) {
-	Devices.load()
+	//Devices.load()
 	ports2, err := enumerator.GetDetailedPortsList()
 	if err != nil {
 		log.Fatal(err)
@@ -40,12 +48,14 @@ func getSerialPorts() (usbports []string, perr error) {
 	for _, port := range ports2 {
 		if port.IsUSB {
 			usbports = append(usbports, port.Name)
-			for di, d := range Devices.vendorId {
-				if strings.ToLower(port.VID) == strings.ToLower(d) && strings.ToLower(port.PID) == strings.ToLower(Devices.productId[di]) {
-					log.Printf("detected Device: %s\nportName: %s\n", Devices.cdc[di], port.Name)
+			for di, d := range Cfg.Device {
+				if strings.ToLower(port.VID) == strings.ToLower(d.Vendor) && strings.ToLower(port.PID) == strings.ToLower(d.Product) {
+					log.Printf("detected Device: %s\nportName: %s\n",Cfg.Device[di].Name, port.Name)
 					SelectedPortId = len(usbports) - 1
 					SelectedDeviceId = di
 					SerialDevice1 = port.Name
+				} else {
+					log.Println("no match -> usbport: %s\n",port.Name)
 				}
 			}
 		}
@@ -71,8 +81,6 @@ func connectSerial(selSerialPort string) (err error) {
 		}
 		serialPort, err = serial.Open(selSerialPort, mode)
 		time.Sleep(time.Millisecond * 100)
-		serialPort.ResetInputBuffer()
-		serialPort.ResetOutputBuffer()
 		if err != nil {
 			log.Println("error serial connect ", err)
 		} else {

@@ -60,13 +60,9 @@ func buttonClicked(btn int) {
 func slotChecked(slot, state int) {
 	//log.Printf(" Checked %d - state: %d\n", slot, state)
 	if state == 2 && Connected {
-		if Device == Devices.name[1] {
-			//RevG's first Slot is 1 and Last Slot is 8
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot+1))
-		} else {
-			//RevE's first Slot is 0 and Last Slot is 7
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot))
-		}
+		// RevE's first Slot is 0 and Last Slot is 7
+		// RevG's first slot is 1 and last Slot is 8
+		sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(Cfg.Device[SelectedDeviceId].Config.Slot.Offset))
 	}
 	Slots[slot].slot.Repaint()
 }
@@ -81,21 +77,18 @@ func selectAllSlots(b bool) {
 func applySlot() {
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
-			hardwareSlot := i
-			if Device == Devices.name[1] {
-				hardwareSlot = i + 1
-			}
+			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			//select slot
-			sendSerialCmd(Commands.config + "=" + s.mode.CurrentText())
+			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["config"] + "=" + s.mode.CurrentText())
 			//set mode
-			sendSerialCmd(Commands.config + "=" + s.mode.CurrentText())
+			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["config"] + "=" + s.mode.CurrentText())
 			//set uid
-			sendSerialCmd(Commands.uid + "=" + s.uid.Text())
+			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["uid"] + "=" + s.uid.Text())
 			//set  button short
-			sendSerialCmd(Commands.button + "=" + s.btns.CurrentText())
+			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["button"] + "=" + s.btns.CurrentText())
 			//set button long
-			sendSerialCmd(Commands.buttonl + "=" + s.btnl.CurrentText())
+			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["buttonl"] + "=" + s.btnl.CurrentText())
 		}
 	}
 	populateSlots()
@@ -118,10 +111,7 @@ func clearSlot() {
 		if sel {
 			c1++
 			log.Printf("clearing %s\n", s.slotl.Text())
-			hardwareSlot := i
-			if Device == Devices.name[1] {
-				hardwareSlot = i + 1
-			}
+			hardwareSlot := i+ Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			sendSerialCmd(DeviceActions.clearSlot)
 		}
@@ -140,14 +130,13 @@ func activateSlots() {
 			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 		return
 	}
+
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			hardwareSlot := i
-			if Device == Devices.name[1] {
-				hardwareSlot = i + 1
-			}
+			hardwareSlot := i+ Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			Cfg.Device[SelectedDeviceId].Config.Slot.Selected = hardwareSlot
 		}
 	}
 }
@@ -178,10 +167,7 @@ func uploadSlots() bool {
 
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
-			hardwareSlot := i
-			if Device == Devices.name[1] {
-				hardwareSlot = i + 1
-			}
+			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			// Open file
 			log.Printf("loading file %s\n", filename)
@@ -238,10 +224,7 @@ func downloadSlots() {
 	)
 	var filename string
 	for i, s := range Slots {
-		hardwareSlot := i
-		if Device == Devices.name[1] {
-			hardwareSlot = i + 1
-		}
+		hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 		sel := s.slot.IsChecked()
 		if sel {
 			fileSelect := widgets.NewQFileDialog(nil, 0)
@@ -311,11 +294,7 @@ func populateSlots() {
 		if s.slot.IsChecked() {
 			c++
 			myProgressBar.update(c)
-			if Device == Devices.name[1] {
-				hardwareSlot = sn + 1
-			} else {
-				hardwareSlot = sn
-			}
+			hardwareSlot = sn  + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 
 			log.Printf("read data for Slot %d\n", sn+1)
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
@@ -347,7 +326,8 @@ func populateSlots() {
 			s.btnl.Repaint()
 
 			// ToDo: currently mostly faked - currently not implemented in my revG
-			//unlear about RButton & LButton short and long -> 4 scenarios?
+			// unlear about RButton & LButton short and long -> 4 scenarios?
+			// but works on RevG
 			sendSerialCmd(DeviceActions.getButton)
 			buttons := SerialResponse.Payload
 			_, buttonsindex := getPosFromList(buttons, TagButtons)

@@ -4,13 +4,25 @@ import (
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"os"
+	"github.com/WolfgangMau/chamgo-qt/config"
 )
 
-var AppName = "Chamgo-QT"
+var AppName string
 var Connected bool
 var Statusbar *widgets.QStatusBar
+var Cfg config.Config
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	Cfg.Load()
+	AppName=Cfg.Gui.Title
+	//	log.Printf("cfg: %v",cfg)
+	//	log.Printf("%s\n",cfg.Device[0].CmdSet["version"])
+	//	d, err := yaml.Marshal(&cfg)
+	//	if err != nil {
+	//		log.Fatalf("error: %v", err)
+	//	}
+	//	log.Printf("--- m dump:\n%s\n\n", string(d))
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Connected = false
 	ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}

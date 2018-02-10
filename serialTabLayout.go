@@ -24,10 +24,9 @@ func serialTab() *widgets.QWidget {
 	serConLayout := widgets.NewQFormLayout(nil)
 
 	deviceSelect = widgets.NewQComboBox(nil)
-	deviceSelect.AddItems(Devices.name)
-	deviceSelect.SetCurrentIndex(0)
-	deviceSelect.SetFixedWidth(160)
+	deviceSelect.AddItems(getDeviceNames())
 	deviceSelect.SetCurrentIndex(SelectedDeviceId)
+	deviceSelect.SetFixedWidth(160)
 
 	serialPortSelect = widgets.NewQComboBox(nil)
 	serialPortSelect.AddItems(serialPorts)
@@ -51,8 +50,8 @@ func serialTab() *widgets.QWidget {
 	serialTabLayout.AddWidget(serialConnectGroup, 0, 0x0020)
 
 	serialConnectButton.ConnectClicked(func(checked bool) {
-
-		Commands.load(deviceSelect.CurrentText())
+		Commands := Cfg.Device[SelectedDeviceId].CmdSet
+		//Commands.load(deviceSelect.CurrentText())
 
 		if serialConnectButton.Text() == "Connect" {
 
@@ -62,27 +61,35 @@ func serialTab() *widgets.QWidget {
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 				log.Printf("error on connect: %q\n", err)
 			} else {
-				Device = deviceSelect.CurrentText()
-				Commands.load(Device)
-				DeviceActions.load(Device)
+				dn := Cfg.Device[SelectedDeviceId].Name
+				DeviceActions.load(dn)
 
 				//ask for the device-version
-				sendSerialCmd(Commands.version + "?")
+				sendSerialCmd(Commands["version"] + "?")
 				if SerialResponse.Code >= 100 {
 					serialConnectButton.SetText("Disconnect")
 					serialSendButton.SetDisabled(false)
 					serialSendButton.Repaint()
-					checkForDevices()
+					//checkForDevices()
 				}
 				//web got a expected answer from the VERSION(MY) cmd
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true
-					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Devices.cdc[SelectedDeviceId]+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
+					Statusbar.ShowMessage("Connected to Port: "+serialPortSelect.CurrentText()+" - Device: "+Cfg.Device[SelectedDeviceId].Cdc+" - Firmware: "+deviceInfo(SerialResponse.Payload), 0)
 					buttonClicked(0)
 					buttonClicked(4)
 					buttonClicked(1)
-
+					log.Printf("preselected selectedslot: %d\n",Cfg.Device[SelectedDeviceId].Config.Slot.Selected)
+					selslot :=  0+Cfg.Device[SelectedDeviceId].Config.Slot.Selected
+					if Cfg.Device[SelectedDeviceId].Config.Slot.First <= selslot &&  Cfg.Device[SelectedDeviceId].Config.Slot.Last >= selslot {
+						if err != nil {
+							log.Printf("error select preselected slot (%s)\n", err)
+						} else {
+							log.Println("set slot ",	selslot," as selected")
+							Slots[selslot].slot.SetChecked(true)
+						}
+					}
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",
 						widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
@@ -91,6 +98,7 @@ func serialTab() *widgets.QWidget {
 		} else {
 			err := serialPort.Close()
 			if err == nil {
+				Cfg.Save()
 				serialConnectButton.SetText("Connect")
 				serialSendButton.SetDisabled(true)
 				serialSendButton.Repaint()
@@ -98,9 +106,8 @@ func serialTab() *widgets.QWidget {
 				Statusbar.ShowMessage("not Connected", 0)
 				Connected = false
 				serialPort.Close()
-				//GetSlotTicker.Stop()
-				//log.Println("GetSlotTicker stopped")
 				myProgressBar.zero()
+
 			}
 		}
 
