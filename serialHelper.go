@@ -90,7 +90,7 @@ func connectSerial(selSerialPort string) (err error) {
 	select {
 	case res := <-c1:
 		log.Printf("serialPort %v  connected - res: %d\n", serialPort, res)
-	case <-time.After(time.Second * 2):
+	case <-time.After(time.Second * time.Duration(Cfg.Serial.ConeectionTimeout)):
 		err = errors.New("serial connection timeout")
 	}
 
@@ -107,8 +107,10 @@ func sendSerialCmd(cmd string) {
 	SerialResponse.String = ""
 	SerialResponse.Payload = ""
 
+	log.Printf("send cmd: %s\n",cmd)
 	temp := sendSerial(cmd)
 	prepareResponse(temp)
+	log.Printf("response: %s\n",SerialResponse.Payload)
 }
 
 func sendSerial(cmdStr string) string {
@@ -119,14 +121,14 @@ func sendSerial(cmdStr string) string {
 		if err != nil {
 			log.Println("errro send serial: ", err, cmdStr)
 		}
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * time.Duration(Cfg.Serial.WaitForReceive))
 		resp = receiveSerial()
 		c1 <- resp
 	}()
 	select {
 	case resp := <-c1:
 		return resp
-	case <-time.After(time.Second * 10):
+	case <-time.After(time.Second * time.Duration(Cfg.Serial.ConeectionTimeout)):
 		log.Println("sendSrial Timeout")
 	}
 	return resp

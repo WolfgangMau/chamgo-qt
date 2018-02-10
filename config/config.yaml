@@ -87,8 +87,8 @@ device:
     autocalibrate: AUTOCALIBRATE
     field: FIELD
 serial:
-  waitforreceive: 25
-  connectiontimeout: 5
+  waitforreceive: 50
+  connectiontimeout: 10
   autoconnect: false
 gui:
   title: "config test"

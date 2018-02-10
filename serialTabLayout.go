@@ -51,6 +51,9 @@ func serialTab() *widgets.QWidget {
 
 	serialConnectButton.ConnectClicked(func(checked bool) {
 		Commands := Cfg.Device[SelectedDeviceId].CmdSet
+		//for n,c := range Commands {
+		//	log.Printf("Command Name: %s -> %s\n",n,c)
+		//}
 		//Commands.load(deviceSelect.CurrentText())
 
 		if serialConnectButton.Text() == "Connect" {
@@ -63,6 +66,9 @@ func serialTab() *widgets.QWidget {
 			} else {
 				dn := Cfg.Device[SelectedDeviceId].Name
 				DeviceActions.load(dn)
+				if len(DeviceActions.getUid)<=0 {
+					log.Println("no action for 'getUid!?' ",DeviceActions.getUid)
+				}
 
 				//ask for the device-version
 				sendSerialCmd(Commands["version"] + "?")
@@ -72,7 +78,7 @@ func serialTab() *widgets.QWidget {
 					serialSendButton.Repaint()
 					//checkForDevices()
 				}
-				//we got a expected answer from the VERSION(MY) cmd
+				//web got a expected answer from the VERSION(MY) cmd
 				if SerialResponse.Code == 101 {
 					serialDeviceInfo.SetText("Connected\n" + deviceInfo(SerialResponse.Payload))
 					Connected = true

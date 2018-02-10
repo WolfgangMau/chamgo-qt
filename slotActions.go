@@ -284,16 +284,12 @@ func populateSlots() {
 	}
 
 	c := 0
-	all := countSelected()
 
 	hardwareSlot := 0
-	myProgressBar.zero()
-	myProgressBar.widget.SetRange(c, all)
 	for sn, s := range Slots {
 		//update single slot
 		if s.slot.IsChecked() {
 			c++
-			myProgressBar.update(c)
 			hardwareSlot = sn  + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 
 			log.Printf("read data for Slot %d\n", sn+1)

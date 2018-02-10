@@ -166,7 +166,7 @@ func (d *deviceActions) load(device string) {
 	Commands := Cfg.Device[SelectedDeviceId].CmdSet
 	switch device {
 
-	case "RevE-Rebooted":
+	case "Chameleon RevE-Rebooted":
 		d.getModes = Commands["config"]
 		d.getButtons = Commands["button"]
 
@@ -183,7 +183,7 @@ func (d *deviceActions) load(device string) {
 		d.startDownload = Commands["download"]
 		d.clearSlot = Commands["clear"]
 
-	case "RevG":
+	case "Chameleon RevG":
 		d.getModes = Commands["config"] + "=?"
 		d.getButtons = Commands["button"] + "=?"
 
