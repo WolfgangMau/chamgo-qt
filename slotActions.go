@@ -58,11 +58,9 @@ func buttonClicked(btn int) {
 }
 
 func slotChecked(slot, state int) {
-	//log.Printf(" Checked %d - state: %d\n", slot, state)
+	log.Printf(" Checked %d - state: %d\n", slot, state)
 	if state == 2 && Connected {
-		// RevE's first Slot is 0 and Last Slot is 7
-		// RevG's first slot is 1 and last Slot is 8
-		sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(Cfg.Device[SelectedDeviceId].Config.Slot.Offset))
+		sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot+Cfg.Device[SelectedDeviceId].Config.Slot.Offset))
 	}
 	Slots[slot].slot.Repaint()
 }
@@ -352,9 +350,6 @@ func checkForDevices() {
 
 					deviceSelect.SetCurrentIndex(SelectedDeviceId)
 					deviceSelect.Repaint()
-					//Device = deviceSelect.CurrentText()
-					//Commands.load(Device)
-					//DeviceActions.load(Device)
 				} else {
 					if len(serialPorts) == 0 {
 						serialPortSelect.Clear()
@@ -380,12 +375,4 @@ func getPosFromList(val string, array []string) (exists bool, index int) {
 	}
 
 	return
-}
-
-func (pb *progressBar) update(c int) {
-	pb.widget.SetValue(c)
-}
-
-func (pb *progressBar) zero() {
-	pb.widget.Reset()
 }

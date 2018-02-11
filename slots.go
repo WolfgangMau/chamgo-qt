@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-var myProgressBar progressBar
-
-type progressBar struct {
-	widget *widgets.QProgressBar
-}
 type Slot struct {
 	widgets.QMainWindow
 	slotl *widgets.QLabel
@@ -38,15 +33,14 @@ type SlotBox struct {
 	b *widgets.QGroupBox
 }
 
-type AButton struct {
+type ActionButton struct {
 	b *widgets.QPushButton
 }
 
-var AButtons [9]AButton
+var actionButtons [9]ActionButton
 
 var Slots [8]Slot
 var Slotlayouts [2]SlotHLayout
-var SlotHlayouts [8]SlotHLayout
 var SlotGroupVlayouts [8]SlotVLayout
 var Slotboxes [8]SlotBox
 
@@ -77,6 +71,7 @@ func allSlots() *widgets.QWidget {
 			Slots[c].slotl.SetFont(bold)
 			Slots[c].slot = widgets.NewQCheckBox(nil)
 			Slots[c].slot.SetChecked(false)
+
 			boxlayout.AddWidget(Slots[c].slotl, 0, 0, 0x0001)
 			boxlayout.AddWidget(Slots[c].slot, 0, 1, 0x0001)
 
@@ -125,9 +120,7 @@ func allSlots() *widgets.QWidget {
 
 			SlotGroupVlayouts[i].l = widgets.NewQVBoxLayout()
 			SlotGroupVlayouts[i].l.SetSpacing(0)
-			//SlotGroupVlayouts[i].l.AddLayout(SlotHlayouts[i].l, 0)
 			SlotGroupVlayouts[i].l.AddWidget(Slotboxes[i].b, 1, 0x0001)
-			//
 			slotsTabLayout.AddLayout(SlotGroupVlayouts[i].l, i, s, 0x0020)
 
 			c++
@@ -136,8 +129,8 @@ func allSlots() *widgets.QWidget {
 
 	abtnLayout := widgets.NewQGridLayout(nil)
 	for i, s := range ActionButtons {
-		AButtons[i].b = widgets.NewQPushButton2(s, nil)
-		abtnLayout.AddWidget(AButtons[i].b, 0, i, 0x0004)
+		actionButtons[i].b = widgets.NewQPushButton2(s, nil)
+		abtnLayout.AddWidget(actionButtons[i].b, 0, i, 0x0004)
 	}
 	AButtonGroup := widgets.NewQGroupBox2("Available Actions", nil)
 	AButtonGroup.SetLayout(abtnLayout)
@@ -146,13 +139,6 @@ func allSlots() *widgets.QWidget {
 	A2ButtonLayout.AddWidget(AButtonGroup, 0, 0x0004)
 	slotsTabLayout.AddLayout2(A2ButtonLayout, 3, 0, 1, 4, 0x0004)
 
-	//for i:=0; i<len(Slots); i++ {
-	//	Slots[c].slot.ConnectStateChanged(func(checked int) {
-	//		log.Printf("Checked %d - state: %d\n", i, checked)
-	//	})
-	//}
-
-	//
 	Slots[0].slot.ConnectStateChanged(func(checked int) {
 		slotChecked(0, checked)
 	})
@@ -178,31 +164,31 @@ func allSlots() *widgets.QWidget {
 		slotChecked(7, checked)
 	})
 
-	AButtons[0].b.ConnectClicked(func(checked bool) {
+	actionButtons[0].b.ConnectClicked(func(checked bool) {
 		buttonClicked(0)
 	})
-	AButtons[1].b.ConnectClicked(func(checked bool) {
+	actionButtons[1].b.ConnectClicked(func(checked bool) {
 		buttonClicked(1)
 	})
-	AButtons[2].b.ConnectClicked(func(checked bool) {
+	actionButtons[2].b.ConnectClicked(func(checked bool) {
 		buttonClicked(2)
 	})
-	AButtons[3].b.ConnectClicked(func(checked bool) {
+	actionButtons[3].b.ConnectClicked(func(checked bool) {
 		buttonClicked(3)
 	})
-	AButtons[4].b.ConnectClicked(func(checked bool) {
+	actionButtons[4].b.ConnectClicked(func(checked bool) {
 		buttonClicked(4)
 	})
-	AButtons[5].b.ConnectClicked(func(checked bool) {
+	actionButtons[5].b.ConnectClicked(func(checked bool) {
 		buttonClicked(5)
 	})
-	AButtons[6].b.ConnectClicked(func(checked bool) {
+	actionButtons[6].b.ConnectClicked(func(checked bool) {
 		buttonClicked(6)
 	})
-	AButtons[7].b.ConnectClicked(func(checked bool) {
+	actionButtons[7].b.ConnectClicked(func(checked bool) {
 		buttonClicked(7)
 	})
-	AButtons[8].b.ConnectClicked(func(checked bool) {
+	actionButtons[8].b.ConnectClicked(func(checked bool) {
 		buttonClicked(8)
 	})
 

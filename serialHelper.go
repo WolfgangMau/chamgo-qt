@@ -54,8 +54,6 @@ func getSerialPorts() (usbports []string, perr error) {
 					SelectedPortId = len(usbports) - 1
 					SelectedDeviceId = di
 					SerialDevice1 = port.Name
-				} else {
-					log.Println("no match -> usbport: %s\n",port.Name)
 				}
 			}
 		}
@@ -74,13 +72,13 @@ func connectSerial(selSerialPort string) (err error) {
 		}
 
 		mode := &serial.Mode{
-			BaudRate: 115200,
+			BaudRate: Cfg.Device[SelectedDeviceId].Config.Serial.Baud,
 			Parity:   serial.NoParity,
 			DataBits: 8,
 			StopBits: serial.OneStopBit,
 		}
 		serialPort, err = serial.Open(selSerialPort, mode)
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout))
 		if err != nil {
 			log.Println("error serial connect ", err)
 		} else {
@@ -90,7 +88,7 @@ func connectSerial(selSerialPort string) (err error) {
 	select {
 	case res := <-c1:
 		log.Printf("serialPort %v  connected - res: %d\n", serialPort, res)
-	case <-time.After(time.Second * time.Duration(Cfg.Serial.ConeectionTimeout)):
+	case <-time.After(time.Second * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout)):
 		err = errors.New("serial connection timeout")
 	}
 
@@ -110,7 +108,7 @@ func sendSerialCmd(cmd string) {
 	log.Printf("send cmd: %s\n",cmd)
 	temp := sendSerial(cmd)
 	prepareResponse(temp)
-	log.Printf("response: %s\n",SerialResponse.Payload)
+	log.Printf("response:\n\tCode: %d\n\tString: %s \n\tPayloadLen: %d\n",SerialResponse.Code,SerialResponse.String,len(SerialResponse.Payload))
 }
 
 func sendSerial(cmdStr string) string {
@@ -121,14 +119,14 @@ func sendSerial(cmdStr string) string {
 		if err != nil {
 			log.Println("errro send serial: ", err, cmdStr)
 		}
-		time.Sleep(time.Millisecond * time.Duration(Cfg.Serial.WaitForReceive))
+		time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
 		resp = receiveSerial()
 		c1 <- resp
 	}()
 	select {
 	case resp := <-c1:
 		return resp
-	case <-time.After(time.Second * time.Duration(Cfg.Serial.ConeectionTimeout)):
+	case <-time.After(time.Second * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout)):
 		log.Println("sendSrial Timeout")
 	}
 	return resp
@@ -139,7 +137,7 @@ func receiveSerial() (resp string) {
 	var err error
 	var n = 0
 	var c = 0
-	for c < 6 {
+	for c < 1 {
 		n, err = serialPort.Read(buff)
 		if err != nil {
 			log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
@@ -162,16 +160,13 @@ func deviceInfo(longInfo string) (shortInfo string) {
 
 func prepareResponse(res string) {
 	var result []string
-
 	res = strings.Replace(res, "\n", "#", -1)
 	res = strings.Replace(res, "\r", "#", -1)
 	res = strings.Replace(res, "##", "#", -1)
+
 	if !strings.Contains(res, ":") {
 		log.Println("no response given")
 		serialPort.ResetInputBuffer()
-		//serialPort.ResetOutputBuffer()
-		//Connected = false
-		//serialPort.Close()
 		return
 	}
 	temp2 = strings.Split(res, ":")

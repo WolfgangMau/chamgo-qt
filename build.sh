@@ -23,4 +23,4 @@ echo "darwin"
 qtdeploy
 mkdir deploy/darwin/chamgo-qt.app/Contents/MacOS/config
 cp config/config.yaml deploy/darwin/chamgo-qt.app/Contents/MacOS/config/
-zip -r deploy/chamgo-qt-osx.zip deploy/darwin
+#zip -r deploy/chamgo-qt-osx.zip deploy/darwin

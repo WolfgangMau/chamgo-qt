@@ -10,19 +10,6 @@ import (
 
 var configfile = "config.yaml"
 
-//func main() {
-//	log.SetFlags(log.LstdFlags | log.Lshortfile)
-//	var cfg Config
-//	cfg.Load()
-//	log.Printf("cfg: %v",cfg)
-//	log.Printf("%s\n",cfg.Device[0].CmdSet["version"])
-//	d, err := yaml.Marshal(&cfg)
-//	if err != nil {
-//		log.Fatalf("error: %v", err)
-//	}
-//	log.Printf("--- m dump:\n%s\n\n", string(d))
-//}
-
 type Config struct {
 	Device []struct {
 		Vendor  string `yaml:"vendor"`
@@ -37,13 +24,14 @@ type Config struct {
 				First int `yaml:"first"`
 				Last int `yaml:"last"`
 			} `yaml:"slot"`
+			Serial struct {
+				Baud 				int `yaml:"baud"`
+				WaitForReceive		int `yaml:"waitforreceive"`
+				ConeectionTimeout 	int `yaml:"connectiontimeout"`
+				Autoconnect 		bool `yaml:"autoconnect"`
+			} `yaml:"serial"`
 		} `yaml:"config"`
 	} `yaml:"device"`
-	Serial struct {
-		WaitForReceive		int `yaml:"waitforreceive"`
-		ConeectionTimeout 	int `yaml:"connectiontimeout"`
-		Autoconnect 		bool `yaml:"autoconnect"`
-	} `yaml:"serial"`
 	Gui struct {
 		Title string `yaml:"title"`
 	} `yaml:"gui"`

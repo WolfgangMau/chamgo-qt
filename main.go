@@ -16,13 +16,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Cfg.Load()
 	AppName=Cfg.Gui.Title
-	//	log.Printf("cfg: %v",cfg)
-	//	log.Printf("%s\n",cfg.Device[0].CmdSet["version"])
-	//	d, err := yaml.Marshal(&cfg)
-	//	if err != nil {
-	//		log.Fatalf("error: %v", err)
-	//	}
-	//	log.Printf("--- m dump:\n%s\n\n", string(d))
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Connected = false
 
@@ -42,11 +36,6 @@ func main() {
 	mainlayout.AddWidget(tabWidget, 0, 0x0020)
 	mainlayout.SetAlign(33)
 
-	myProgressBar.widget = widgets.NewQProgressBar(window)
-	myProgressBar.widget.SetRange(0, 100)
-	myProgressBar.widget.SetVisible(true)
-	myProgressBar.widget.ShowDefault()
-	mainlayout.AddWidget(myProgressBar.widget, 0, 0x0020)
 
 	mainWidget := widgets.NewQWidget(nil, 0)
 	mainWidget.SetLayout(mainlayout)
