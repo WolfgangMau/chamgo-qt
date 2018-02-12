@@ -37,13 +37,8 @@ type Config struct {
 	} `yaml:"gui"`
 }
 
-//func  (c *Config) Default() *Config {
-//	//Device
-//	return
-//}
-
 func (c *Config) Load() *Config {
-	cfgfile := configpath()
+	cfgfile := Configpath()+configfile
 	//log.Printf("Using configFile: %s\n", configfile)
 	if len(cfgfile)>0 {
 		yamlFile, err := ioutil.ReadFile(cfgfile)
@@ -51,21 +46,21 @@ func (c *Config) Load() *Config {
 			log.Printf("error reading config (%s) err   #%v ", cfgfile, err)
 			os.Exit(2)
 		}
-		//log.Printf("%v\n",string(yamlFile))
+
+		log.Println("loaded configfile: ",cfgfile)
 
 		err = yaml.Unmarshal(yamlFile, c)
 		if err != nil {
 			log.Fatalf("Unmarshal: %v", err)
 			return nil
 		}
-
 		return c
 	}
 	return nil
 }
 
 func (c *Config) Save() bool {
-	cfgfile := configpath()
+	cfgfile := Configpath()+configfile
 	if len(cfgfile)>0 {
 		if data, err := yaml.Marshal(c); err != nil {
 			log.Printf("error Marshall yaml (%s)\n", err)
@@ -81,7 +76,7 @@ func (c *Config) Save() bool {
 	return false
 }
 
-func configpath() string {
+func Configpath() string {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -93,5 +88,61 @@ func configpath() string {
 		log.Printf("ConfigFile %s not found!\n", configpath+configfile)
 		return ""
 	}
-	return configpath+configfile
+	return configpath
+}
+
+type DeviceActions struct {
+	//config info
+	GetModes    string
+	GetButtons  string
+	GetButtonsl string
+	//slot info
+	GetMode    string
+	GetUid     string
+	GetButton  string
+	GetButtonl string
+	GetSize    string
+	//actions
+	SelectSlot    string
+	SelectedSlot  string
+	ClearSlot     string
+	StartUpload   string
+	StartDownload string
+}
+
+func (d *DeviceActions) Load(commands map[string]string,device string) {
+	switch device {
+
+		case "Chameleon RevE-Rebooted":
+			d.GetModes = commands["config"]
+			d.GetButtons = commands["button"]
+
+			d.GetMode = commands["config"] + "?"
+			d.GetUid = commands["uid"] + "?"
+			d.GetButton = commands["button"] + "?"
+			d.GetButtonl = commands["buttonl"] + "?"
+			d.GetSize = commands["memory"] + "?"
+
+			d.SelectSlot = commands["setting"] + "="
+			d.SelectedSlot = commands["setting"] + "?"
+			d.StartUpload = commands["upload"]
+			d.StartDownload = commands["download"]
+			d.ClearSlot = commands["clear"]
+
+		case "Chameleon RevG":
+			d.GetModes = commands["config"] + "=?"
+			d.GetButtons = commands["button"] + "=?"
+
+			d.GetMode = commands["config"] + "?"
+			d.GetUid = commands["uid"] + "?"
+			d.GetButton = commands["button"] + "?"
+			d.GetButtonl = commands["buttonl"] + "?"
+			d.GetSize = commands["memory"] + "?"
+
+			d.SelectSlot = commands["setting"] + "="
+			d.SelectedSlot = commands["setting"] + "?"
+			d.StartUpload = commands["upload"]
+			d.StartDownload = commands["download"]
+			d.ClearSlot = commands["clear"]
+		}
 }

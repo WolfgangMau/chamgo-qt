@@ -11,7 +11,7 @@ device:
       last: 7
     serial:
       baud: 115200
-      waitforreceive: 100
+      waitforreceive: 25
       connectiontimeout: 5
       autoconnect: false
   cmdset: # RevE-Rebooted

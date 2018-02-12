@@ -10,11 +10,21 @@ import (
 	"time"
 )
 
-var serialPort serial.Port
+
+var Connected bool
+var SerialPort serial.Port
 var SelectedPortId int
 var SelectedDeviceId int
+var SerialDevice string
+var SerialResponse serialResponse
 
-var SerialDevice1 string
+type serialResponse struct {
+	Cmd     string
+	Code    int
+	String  string
+	Payload string
+}
+
 
 func getDeviceNames() []string {
 	var dn []string
@@ -53,12 +63,12 @@ func getSerialPorts() (usbports []string, perr error) {
 					log.Printf("detected Device: %s\nportName: %s\n", Cfg.Device[di].Name, port.Name)
 					SelectedPortId = len(usbports) - 1
 					SelectedDeviceId = di
-					SerialDevice1 = port.Name
+					SerialDevice = port.Name
 				}
 			}
 		}
 	}
-	log.Printf("SelectedPortId: %d - SerialDevice1: %s - SelectedDeviceId: %d\n", SelectedPortId, SerialDevice1, SelectedDeviceId)
+	log.Printf("SelectedPortId: %d - SerialDevice1: %s - SelectedDeviceId: %d\n", SelectedPortId, SerialDevice, SelectedDeviceId)
 	return usbports, nil
 }
 
@@ -77,7 +87,7 @@ func connectSerial(selSerialPort string) (err error) {
 			DataBits: 8,
 			StopBits: serial.OneStopBit,
 		}
-		serialPort, err = serial.Open(selSerialPort, mode)
+		SerialPort, err = serial.Open(selSerialPort, mode)
 		time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout))
 		if err != nil {
 			log.Println("error serial connect ", err)
@@ -87,7 +97,7 @@ func connectSerial(selSerialPort string) (err error) {
 	}()
 	select {
 	case res := <-c1:
-		log.Printf("serialPort %v  connected - res: %d\n", serialPort, res)
+		log.Printf("SerialPort %v  connected - res: %d\n", SerialPort, res)
 	case <-time.After(time.Second * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout)):
 		err = errors.New("serial connection timeout")
 	}
@@ -108,14 +118,14 @@ func sendSerialCmd(cmd string) {
 	log.Printf("send cmd: %s\n", cmd)
 	temp := sendSerial(cmd)
 	prepareResponse(temp)
-	log.Printf("response:\n\tCode: %d\n\tString: %s \n\tPayloadLen: %d\n", SerialResponse.Code, SerialResponse.String, len(SerialResponse.Payload))
+	log.Printf("response:\n\tCode: %d\n\tString: %s \n\tPayload: %s\n", SerialResponse.Code, SerialResponse.String, SerialResponse.Payload)
 }
 
 func sendSerial(cmdStr string) string {
 	var resp string
 	c1 := make(chan string)
 	go func() {
-		_, err := serialPort.Write([]byte(cmdStr + "\r\n"))
+		_, err := SerialPort.Write([]byte(cmdStr + "\r\n"))
 		if err != nil {
 			log.Println("errro send serial: ", err, cmdStr)
 		}
@@ -138,7 +148,7 @@ func receiveSerial() (resp string) {
 	var n = 0
 	var c = 0
 	for c < 1 {
-		n, err = serialPort.Read(buff)
+		n, err = SerialPort.Read(buff)
 		if err != nil {
 			log.Printf("error temp: %s - n %d - error (%s)\n", resp, n, err)
 		}
@@ -166,14 +176,14 @@ func prepareResponse(res string) {
 
 	if !strings.Contains(res, ":") {
 		log.Println("no response given")
-		serialPort.ResetInputBuffer()
+		SerialPort.ResetInputBuffer()
 		return
 	}
-	temp2 = strings.Split(res, ":")
-	if len(temp2[1]) >= 2 {
-		result = append(result, temp2[0])
-		SerialResponse.Code, _ = strconv.Atoi(temp2[0])
-		temp := strings.Split(temp2[1], "#")
+	temp := strings.Split(res, ":")
+	if len(temp[1]) >= 2 {
+		result = append(result, temp[0])
+		SerialResponse.Code, _ = strconv.Atoi(temp[0])
+		temp := strings.Split(temp[1], "#")
 		if len(temp) > 0 {
 			for i, s := range temp {
 				switch i {
@@ -188,4 +198,39 @@ func prepareResponse(res string) {
 			}
 		}
 	}
+}
+
+func SerialSendOnly(cmd string) {
+	_, err := SerialPort.Write([]byte(strings.ToUpper(cmd) + "\r\n"))
+	if err != nil {
+		log.Println(err)
+	}
+	time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
+	return
+}
+
+func GetSpecificBytes(size int) []byte {
+	c1 := make(chan []byte, size)
+	go func() {
+
+		buff := make([]byte, size)
+		c := 0
+		for c < size {
+			n := 0
+			n, err := SerialPort.Read(buff)
+			if err != nil {
+				log.Println(err)
+			}
+			c = c + n
+		}
+		c1 <- buff
+	}()
+	select {
+	case buff := <-c1:
+		return buff
+	case <-time.After(time.Second * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout)):
+		log.Println("GetSpecificBytes Timeout")
+	}
+
+	return nil
 }

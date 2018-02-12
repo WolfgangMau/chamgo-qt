@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/therecipe/qt/widgets"
 	"log"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"github.com/WolfgangMau/chamgo-qt/config"
+	"github.com/WolfgangMau/chamgo-qt/nonces"
 )
 
 var (
@@ -58,7 +57,7 @@ func serialTab() *widgets.QWidget {
 	macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
 	macroGroup.SetFixedWidth(220)
 	macroSelect := widgets.NewQComboBox(macroGroup)
-	macroSelect.AddItems(getFilesInFolder("macros", ".cmds"))
+	macroSelect.AddItems(config.GetFilesInFolder("macros", ".cmds"))
 	macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
 	macroSend := widgets.NewQPushButton2("execute", nil)
 	macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
@@ -78,16 +77,16 @@ func serialTab() *widgets.QWidget {
 
 		if serialConnectButton.Text() == "Connect" {
 
-			err := connectSerial(SerialDevice1)
+			err := connectSerial(SerialDevice)
 			if err != nil {
 				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial\n"+string(err.Error()),
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 				log.Println("error on connect: ", err)
 			} else {
 				dn := Cfg.Device[SelectedDeviceId].Name
-				DeviceActions.load(dn)
-				if len(DeviceActions.getUid) <= 0 {
-					log.Println("no action for 'getUid!?' ", DeviceActions.getUid)
+				DeviceActions.Load(Cfg.Device[SelectedDeviceId].CmdSet, dn)
+				if len(DeviceActions.GetUid) <= 0 {
+					log.Println("no action for 'getUid!?' ", DeviceActions.GetUid)
 				}
 
 				//ask for the device-version
@@ -115,7 +114,7 @@ func serialTab() *widgets.QWidget {
 				}
 			}
 		} else {
-			err := serialPort.Close()
+			err := SerialPort.Close()
 			if err == nil {
 				Cfg.Save()
 				serialConnectButton.SetText("Connect")
@@ -124,7 +123,7 @@ func serialTab() *widgets.QWidget {
 				serialDeviceInfo.SetText("not Connected")
 				Statusbar.ShowMessage("not Connected", 0)
 				Connected = false
-				serialPort.Close()
+				SerialPort.Close()
 
 			}
 		}
@@ -132,42 +131,37 @@ func serialTab() *widgets.QWidget {
 	})
 
 	macroSend.ConnectClicked(func(checked bool) {
-		log.Printf("execute macro %s\n", macroSelect.CurrentText())
-		cmds := readFileLines(macroSelect.CurrentText())
-		if len(cmds) > 0 {
-			for _, c := range cmds {
-				if strings.Contains(strings.ToLower(c), "detectionmy?") {
-					serialMonitor.AppendPlainText("<- " + strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
-					_, err := serialPort.Write([]byte(strings.ToUpper(c) + "\r\n"))
-					if err != nil {
-						log.Println(err)
+		if Connected {
+			log.Println("execute macro ", macroSelect.CurrentText())
+			cmds := config.ReadFileLines(macroSelect.CurrentText())
+			if len(cmds) > 0 {
+				for _, c := range cmds {
+					if strings.Contains(strings.ToLower(c), "detectionmy?") {
+						serialMonitor.AppendPlainText("-> " + strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
+
+						// send cmd ang get the expected 218 bytes (208 nonce + 2 crc + 8 cmd-response (100:OK\n\r)
+						SerialSendOnly(c)
+						buff := GetSpecificBytes(218)
+						//buffer should be empty - only to get sure
+						SerialPort.ResetInputBuffer()
+
+						responsecode := strings.Replace(strings.Replace(string(buff[len(buff)-8:]), "\r", "", -1), "\n", "", -1)
+						log.Println("len enc: ", len(buff))
+						buff = nonces.DecryptData(buff[0:len(buff)-10], 123321, 208)
+						uid := buff[0:4]
+						empty := buff[4:15]
+						log.Printf("uid: %x   crc: %x   empty: %x\n", uid, empty[0:1], empty[1:])
+						noncemap := nonces.ExtractNonces(buff)
+						log.Printf("found %d nonces\n", len(noncemap))
+
+						serialMonitor.AppendPlainText(fmt.Sprintf("<- %s\nuid: %x\nbuff (%d): %x\n", responsecode, uid, len(buff), buff))
+						serialMonitor.Repaint()
+					} else {
+						sendSerialCmd(strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
+						time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
+						serialMonitor.AppendPlainText(fmt.Sprintf("<-Code: %d  String: %s Payload: %s\n", SerialResponse.Code, SerialResponse.String, SerialResponse.Payload))
+						serialMonitor.Repaint()
 					}
-					time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
-					n := 1
-					c := 0
-					buff := make([]byte, 512)
-					for c <= 0 {
-						n, err = serialPort.Read(buff)
-						if err != nil {
-							log.Println(err)
-						}
-						c = c + n
-					}
-					log.Printf("len enc: %d\n", len(buff[0:c-10]))
-					buff2 := DecryptData(buff[0:c-10], 123321, 208)
-					uid := buff2[0:4]
-					empty := buff2[4:15]
-					log.Printf("uid: %x   crc: %x   empty: %x\n", uid, empty[0:1],empty[1:])
-					nonces := extractNonces(buff2)
-					log.Printf("found %d nonces\n%v\n", len(nonces), nonces)
-					responsecode := strings.Replace(strings.Replace(string(buff[c-8:c]), "\r", "", -1), "\n", "", -1)
-					serialMonitor.AppendPlainText(fmt.Sprintf("-> %s\nlen: all: %d\nuid: %x\nbuff (%d): %x\n", responsecode, c, uid, len(buff2), buff2))
-					serialMonitor.Repaint()
-				} else {
-					sendSerialCmd(strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
-					time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
-					serialMonitor.AppendPlainText(fmt.Sprintf("->Code: %d  String: %s Payload: %s\n", SerialResponse.Code, SerialResponse.String, SerialResponse.Payload))
-					serialMonitor.Repaint()
 				}
 			}
 		}
@@ -224,74 +218,5 @@ func serialTab() *widgets.QWidget {
 	return serialTabPage
 }
 
-func getFilesInFolder(root string, ext string) []string {
-	var files []string
-	log.Printf("looking for files with extension %s in %s\n", root, ext)
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		log.Printf("path: %s\n", path)
-		if filepath.Ext(path) == ext {
-			log.Printf("add %s\n", path)
-			files = append(files, path)
-		}
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-	for _, file := range files {
-		log.Println(file)
-	}
-	return files
-}
 
-func readFileLines(path string) (res []string) {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		res = append(res, scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	return res
-}
-
-func DecryptData(encarr []byte, key int, size int) []byte {
-	arr := make([]byte, size)
-	arr = encarr
-	for i := 0; i < size; i++ {
-		s := int(arr[i])
-		t := size + key + i - size/key ^ s
-		encarr[i] = byte(t)
-	}
-	return encarr
-}
-
-type nonce struct {
-	key    byte
-	sector byte
-	nt     []byte
-	nr     []byte
-	ar     []byte
-}
-
-func extractNonces(data []byte) (res []nonce) {
-	for i := 16; i < (208 - 16); i = i + 16 {
-		var n nonce
-		n.key = data[i]          //16
-		n.sector = data[i+1]     //17
-		n.nt = data[i+4 : i+8]   //20-23
-		n.nr = data[i+8 : i+12]  //24-27
-		n.ar = data[i+12 : i+16] //28-31
-		if n.key != byte(0xff) && n.sector != byte(0xff) {
-			res = append(res, n)
-		}
-	}
-	return res
-}

@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-var temp2 []string
-
 var myTime time.Time
 var GetUsbListTicker *time.Ticker
 
@@ -60,7 +58,7 @@ func buttonClicked(btn int) {
 func slotChecked(slot, state int) {
 	log.Printf(" Checked %d - state: %d\n", slot, state)
 	if state == 2 && Connected {
-		sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(slot+Cfg.Device[SelectedDeviceId].Config.Slot.Offset))
+		sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(slot+Cfg.Device[SelectedDeviceId].Config.Slot.Offset))
 	}
 	Slots[slot].slot.Repaint()
 }
@@ -76,7 +74,7 @@ func applySlot() {
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
 			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			//select slot
 			sendSerialCmd(Cfg.Device[SelectedDeviceId].CmdSet["config"] + "=" + s.mode.CurrentText())
 			//set mode
@@ -110,8 +108,8 @@ func clearSlot() {
 			c1++
 			log.Printf("clearing %s\n", s.slotl.Text())
 			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
-			sendSerialCmd(DeviceActions.clearSlot)
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.ClearSlot)
 		}
 	}
 	time.Sleep(time.Millisecond * 50)
@@ -133,7 +131,7 @@ func activateSlots() {
 		sel := s.slot.IsChecked()
 		if sel {
 			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			Cfg.Device[SelectedDeviceId].Config.Slot.Selected = hardwareSlot
 		}
 	}
@@ -166,7 +164,7 @@ func uploadSlots() bool {
 	for i, s := range Slots {
 		if s.slot.IsChecked() {
 			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			// Open file
 			log.Printf("loading file %s\n", filename)
 			fIn, err := os.Open(filename)
@@ -197,10 +195,10 @@ func uploadSlots() bool {
 			}
 
 			//set chameleon into receiver-mode
-			sendSerialCmd(DeviceActions.startUpload)
+			sendSerialCmd(DeviceActions.StartUpload)
 			if SerialResponse.Code == 110 {
 				//start uploading packets
-				xmodem.Send(serialPort, p)
+				xmodem.Send(SerialPort, p)
 			}
 		}
 	}
@@ -231,16 +229,16 @@ func downloadSlots() {
 				return
 			}
 			log.Printf("download a dump from Slot %d into file %s\n", i, filename)
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 
 			//set chameleon into receiver-mode
-			sendSerialCmd(DeviceActions.startDownload)
+			sendSerialCmd(DeviceActions.StartDownload)
 			if SerialResponse.Code == 110 {
-				success, failed, data = xmodem.Receive(serialPort)
+				success, failed, data = xmodem.Receive(SerialPort)
 
 				log.Printf("Success: %d - failed: %d\n", success, failed)
 			}
-			if _, err := serialPort.Write([]byte{xmodem.CAN}); err != nil {
+			if _, err := SerialPort.Write([]byte{xmodem.CAN}); err != nil {
 				log.Println(err)
 				break
 			}
@@ -271,10 +269,10 @@ func populateSlots() {
 
 	if populated == false {
 		//ToDo: error-handling
-		sendSerialCmd(DeviceActions.getModes)
+		sendSerialCmd(DeviceActions.GetModes)
 		TagModes = strings.Split(SerialResponse.Payload, ",")
 		//ToDo: error-handling
-		sendSerialCmd(DeviceActions.getButtons)
+		sendSerialCmd(DeviceActions.GetButtons)
 		TagButtons = strings.Split(SerialResponse.Payload, ",")
 		populated = true
 	}
@@ -289,19 +287,19 @@ func populateSlots() {
 			hardwareSlot = sn + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 
 			log.Printf("read data for Slot %d\n", sn+1)
-			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			//get slot uid
-			sendSerialCmd(DeviceActions.getUid)
+			sendSerialCmd(DeviceActions.GetUid)
 			uid := SerialResponse.Payload
 			//set uid to lineedit
 			s.uid.SetText(uid)
 
-			sendSerialCmd(DeviceActions.getSize)
+			sendSerialCmd(DeviceActions.GetSize)
 			size := SerialResponse.Payload
 
 			s.size.SetText(size)
 
-			sendSerialCmd(DeviceActions.getMode)
+			sendSerialCmd(DeviceActions.GetMode)
 			mode := SerialResponse.Payload
 			_, modeindex := getPosFromList(mode, TagModes)
 			s.mode.Clear()
@@ -309,7 +307,7 @@ func populateSlots() {
 			s.mode.SetCurrentIndex(modeindex)
 			s.mode.Repaint()
 
-			sendSerialCmd(DeviceActions.getButtonl)
+			sendSerialCmd(DeviceActions.GetButtonl)
 			buttonl := SerialResponse.Payload
 			_, buttonlindex := getPosFromList(buttonl, TagButtons)
 			s.btnl.Clear()
@@ -320,7 +318,7 @@ func populateSlots() {
 			// ToDo: currently mostly faked - currently not implemented in my revG
 			// unlear about RButton & LButton short and long -> 4 scenarios?
 			// but works on RevG
-			sendSerialCmd(DeviceActions.getButton)
+			sendSerialCmd(DeviceActions.GetButton)
 			buttons := SerialResponse.Payload
 			_, buttonsindex := getPosFromList(buttons, TagButtons)
 			s.btns.Clear()
