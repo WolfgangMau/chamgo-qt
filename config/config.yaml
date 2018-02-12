@@ -42,7 +42,7 @@ device:
       last: 8
     serial:
       baud: 115200
-      waitforreceive: 50
+      waitforreceive: 100
       connectiontimeout: 10
       autoconnect: false
   cmdset:

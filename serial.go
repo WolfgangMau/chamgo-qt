@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 var Connected bool
 var SerialPort serial.Port
 var SelectedPortId int
@@ -24,7 +23,6 @@ type serialResponse struct {
 	String  string
 	Payload string
 }
-
 
 func getDeviceNames() []string {
 	var dn []string

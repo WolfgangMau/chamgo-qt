@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/WolfgangMau/chamgo-qt/config"
+	"github.com/WolfgangMau/chamgo-qt/nonces"
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/WolfgangMau/chamgo-qt/config"
-	"github.com/WolfgangMau/chamgo-qt/nonces"
 )
 
 var (
@@ -217,6 +217,3 @@ func serialTab() *widgets.QWidget {
 
 	return serialTabPage
 }
-
-
-

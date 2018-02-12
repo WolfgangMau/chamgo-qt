@@ -33,8 +33,8 @@ type SlotBox struct {
 	b *widgets.QGroupBox
 }
 
-
 var ActionButtons = []string{"Select All", "Select None", "Apply", "Clear", "Refresh", "Set Active", "mfkey32", "Upload", "Download"}
+
 type ActionButton struct {
 	b *widgets.QPushButton
 }
@@ -49,7 +49,6 @@ var Slotboxes [8]SlotBox
 var populated = false
 var TagModes []string
 var TagButtons []string
-
 
 func allSlots() *widgets.QWidget {
 	bold := gui.NewQFont()

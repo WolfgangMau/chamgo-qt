@@ -37,7 +37,7 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 	failed  = 0
 
 	var getBytes = true
-	for getBytes {
+	for getBytes && success<32{
 
 		// init tranafer
 		if _, err := serialPort.Write(protocmd); err != nil {
@@ -84,13 +84,16 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 						data.Write(myPacket.Payload)
 					} else {
 						//something went wrong
+						log.Printf("something went wront with Packet %d\n", myPacket.PacketNum)
 						if !myPacket.checkPaylod() && failed < 10 {
 
 							if byte(myPacket.PacketNum) == EOF || byte(myPacket.PacketNum) == EOT {
+								log.Printf("Byte 0x%X received (EOF/EOT)\n", myPacket.PacketNum)
 								//EOT & EOF are no failures
 								failed--
 							} else {
 								//message for sender
+								log.Printf("resend ... Byte 0x%X received\n", myPacket.PacketNum)
 								failed++
 								blockReceived = true
 								protocmd[0] = NAK
@@ -98,7 +101,7 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 							}
 						}
 						//stop transfer
-						//log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n", myPacket.packetNum, bytesReceived, dBuffer[:bytesReceived])
+						log.Printf("Failed Packet (%d)\n len: %d\nData: %X\n", myPacket.PacketNum, bytesReceived, dBuffer[:bytesReceived])
 						failed-- //the last packet checksum must have missmatched - no error!
 						protocmd[0] = CAN
 						getBytes = false
