@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/therecipe/qt/widgets"
 	"log"
-	"strconv"
-	"path/filepath"
 	"os"
-	"bufio"
-	"time"
+	"path/filepath"
+	"strconv"
 	"strings"
-	"fmt"
+	"time"
 )
 
 var (
@@ -54,21 +54,20 @@ func serialTab() *widgets.QWidget {
 	serialConnectGroup.SetLayout(serConLayout)
 	serialConnectGroup.SetFixedSize2(220, 180)
 
-	macroGroupLayout:= widgets.NewQHBoxLayout()
-	macroGroup := widgets.NewQGroupBox2("Command Macros",nil)
+	macroGroupLayout := widgets.NewQHBoxLayout()
+	macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
 	macroGroup.SetFixedWidth(220)
 	macroSelect := widgets.NewQComboBox(macroGroup)
-	macroSelect.AddItems(getFilesInFolder("macros",".cmds"))
-	macroGroupLayout.AddWidget(macroSelect, 1,0x0020)
-	macroSend := widgets.NewQPushButton2("execute",nil)
-	macroGroupLayout.AddWidget(macroSend, 1,0x0020)
-
+	macroSelect.AddItems(getFilesInFolder("macros", ".cmds"))
+	macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
+	macroSend := widgets.NewQPushButton2("execute", nil)
+	macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
 
 	macroGroup.SetLayout(macroGroupLayout)
 
 	leftTabLayout.AddWidget(serialConnectGroup, 1, 0x0020)
 	leftTabLayout.AddWidget(macroGroup, 1, 0x0020)
-	serialTabLayout.AddLayout(leftTabLayout,0)
+	serialTabLayout.AddLayout(leftTabLayout, 0)
 
 	serialConnectButton.ConnectClicked(func(checked bool) {
 		Commands := Cfg.Device[SelectedDeviceId].CmdSet
@@ -83,12 +82,12 @@ func serialTab() *widgets.QWidget {
 			if err != nil {
 				widgets.QMessageBox_Information(nil, "OK", "can't connect to Serial\n"+string(err.Error()),
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-				log.Printf("error on connect: %q\n", err)
+				log.Println("error on connect: ", err)
 			} else {
 				dn := Cfg.Device[SelectedDeviceId].Name
 				DeviceActions.load(dn)
-				if len(DeviceActions.getUid)<=0 {
-					log.Println("no action for 'getUid!?' ",DeviceActions.getUid)
+				if len(DeviceActions.getUid) <= 0 {
+					log.Println("no action for 'getUid!?' ", DeviceActions.getUid)
 				}
 
 				//ask for the device-version
@@ -135,8 +134,8 @@ func serialTab() *widgets.QWidget {
 	macroSend.ConnectClicked(func(checked bool) {
 		log.Printf("execute macro %s\n", macroSelect.CurrentText())
 		cmds := readFileLines(macroSelect.CurrentText())
-		if len(cmds)>0 {
-			for _,c := range cmds {
+		if len(cmds) > 0 {
+			for _, c := range cmds {
 				if strings.Contains(strings.ToLower(c), "detectionmy?") {
 					serialMonitor.AppendPlainText("<- " + strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
 					_, err := serialPort.Write([]byte(strings.ToUpper(c) + "\r\n"))
@@ -154,28 +153,20 @@ func serialTab() *widgets.QWidget {
 						}
 						c = c + n
 					}
-					log.Printf("len enc: %d\n",len(buff[0:c-10]))
-					buff2:=DecryptData(buff[0:c-10], 123321, 208)
-					uid:=buff2[0:4]
-					empty:=buff2[4:15]
-					log.Printf("uid: %x   empt: %x\n",uid,empty)
-					for i:=16;i<(208-16);i=i+16 {
-						key:=buff2[i] //16
-						sector:=buff2[i+1] //17
-						nt:=buff2[i+4:i+8] //20-23
-						nr:=buff2[i+8:i+12] //24-27
-						ar:=buff2[i+12:i+16] //28-31
-						log.Printf("key: %x   sector: %x   nt: %x   nr: %x   ar: %x\n",key,sector,nt,nr,ar)
-						log.Printf("key: %x   sector: %x  ./mfkey32  %x %x %x %x\n",key,sector,uid ,nt,nr,ar)
-					}
-
+					log.Printf("len enc: %d\n", len(buff[0:c-10]))
+					buff2 := DecryptData(buff[0:c-10], 123321, 208)
+					uid := buff2[0:4]
+					empty := buff2[4:15]
+					log.Printf("uid: %x   crc: %x   empty: %x\n", uid, empty[0:1],empty[1:])
+					nonces := extractNonces(buff2)
+					log.Printf("found %d nonces\n%v\n", len(nonces), nonces)
 					responsecode := strings.Replace(strings.Replace(string(buff[c-8:c]), "\r", "", -1), "\n", "", -1)
-					serialMonitor.AppendPlainText(fmt.Sprintf("-> %s\nlen: all: %d\nuid: %x\nbuff (%d): %x\n",responsecode, c, uid,len(buff2), buff2))
+					serialMonitor.AppendPlainText(fmt.Sprintf("-> %s\nlen: all: %d\nuid: %x\nbuff (%d): %x\n", responsecode, c, uid, len(buff2), buff2))
 					serialMonitor.Repaint()
 				} else {
 					sendSerialCmd(strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
 					time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
-					serialMonitor.AppendPlainText(fmt.Sprintf("->Code: %d  String: %s Payload: %s\n",SerialResponse.Code,SerialResponse.String,SerialResponse.Payload))
+					serialMonitor.AppendPlainText(fmt.Sprintf("->Code: %d  String: %s Payload: %s\n", SerialResponse.Code, SerialResponse.String, SerialResponse.Payload))
 					serialMonitor.Repaint()
 				}
 			}
@@ -235,11 +226,11 @@ func serialTab() *widgets.QWidget {
 
 func getFilesInFolder(root string, ext string) []string {
 	var files []string
-	log.Printf("looking for files with extension %s in %s\n",root,ext)
+	log.Printf("looking for files with extension %s in %s\n", root, ext)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		log.Printf("path: %s\n",path)
+		log.Printf("path: %s\n", path)
 		if filepath.Ext(path) == ext {
-			log.Printf("add %s\n",path)
+			log.Printf("add %s\n", path)
 			files = append(files, path)
 		}
 		return nil
@@ -271,17 +262,36 @@ func readFileLines(path string) (res []string) {
 	return res
 }
 
-func DecryptData( encarr []byte, key int, size int) []byte{
+func DecryptData(encarr []byte, key int, size int) []byte {
 	arr := make([]byte, size)
 	arr = encarr
-	log.Printf("dec len: %d - arr len: %d\n",len(encarr),len(arr))
-	for i:=0;i<size;i++{
-		log.Println("#",i)
+	for i := 0; i < size; i++ {
 		s := int(arr[i])
-		t := size + key + i -  size / key ^ s
-		log.Printf("#%d  enc: %x _ dec: %x\n",i,s,t)
-		encarr[i]=byte(t)
+		t := size + key + i - size/key ^ s
+		encarr[i] = byte(t)
 	}
 	return encarr
+}
 
+type nonce struct {
+	key    byte
+	sector byte
+	nt     []byte
+	nr     []byte
+	ar     []byte
+}
+
+func extractNonces(data []byte) (res []nonce) {
+	for i := 16; i < (208 - 16); i = i + 16 {
+		var n nonce
+		n.key = data[i]          //16
+		n.sector = data[i+1]     //17
+		n.nt = data[i+4 : i+8]   //20-23
+		n.nr = data[i+8 : i+12]  //24-27
+		n.ar = data[i+12 : i+16] //28-31
+		if n.key != byte(0xff) && n.sector != byte(0xff) {
+			res = append(res, n)
+		}
+	}
+	return res
 }

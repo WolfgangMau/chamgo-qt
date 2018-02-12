@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/WolfgangMau/chamgo-qt/xmodem"
 	"github.com/therecipe/qt/widgets"
 	"io/ioutil"
 	"log"
@@ -9,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/WolfgangMau/chamgo-qt/xmodem"
 )
 
 var temp2 []string
@@ -109,7 +109,7 @@ func clearSlot() {
 		if sel {
 			c1++
 			log.Printf("clearing %s\n", s.slotl.Text())
-			hardwareSlot := i+ Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			sendSerialCmd(DeviceActions.clearSlot)
 		}
@@ -132,7 +132,7 @@ func activateSlots() {
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			hardwareSlot := i+ Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))
 			Cfg.Device[SelectedDeviceId].Config.Slot.Selected = hardwareSlot
 		}
@@ -208,7 +208,6 @@ func uploadSlots() bool {
 	return true
 }
 
-
 func downloadSlots() {
 	if countSelected() > 1 {
 		widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
@@ -218,7 +217,7 @@ func downloadSlots() {
 	var data bytes.Buffer
 	var (
 		success int
-		failed int
+		failed  int
 	)
 	var filename string
 	for i, s := range Slots {
@@ -237,7 +236,7 @@ func downloadSlots() {
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.startDownload)
 			if SerialResponse.Code == 110 {
-			success, failed, data  = xmodem.Receive(serialPort)
+				success, failed, data = xmodem.Receive(serialPort)
 
 				log.Printf("Success: %d - failed: %d\n", success, failed)
 			}
@@ -265,7 +264,6 @@ func downloadSlots() {
 	}
 }
 
-
 func populateSlots() {
 	if !Connected {
 		return
@@ -288,7 +286,7 @@ func populateSlots() {
 		//update single slot
 		if s.slot.IsChecked() {
 			c++
-			hardwareSlot = sn  + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+			hardwareSlot = sn + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 
 			log.Printf("read data for Slot %d\n", sn+1)
 			sendSerialCmd(DeviceActions.selectSlot + strconv.Itoa(hardwareSlot))

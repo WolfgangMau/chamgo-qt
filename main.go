@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/WolfgangMau/chamgo-qt/config"
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"os"
-	"github.com/WolfgangMau/chamgo-qt/config"
 )
 
 var AppName string
@@ -15,7 +15,7 @@ var Cfg config.Config
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Cfg.Load()
-	AppName=Cfg.Gui.Title
+	AppName = Cfg.Gui.Title
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Connected = false
@@ -35,7 +35,6 @@ func main() {
 
 	mainlayout.AddWidget(tabWidget, 0, 0x0020)
 	mainlayout.SetAlign(33)
-
 
 	mainWidget := widgets.NewQWidget(nil, 0)
 	mainWidget.SetLayout(mainlayout)

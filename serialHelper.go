@@ -18,7 +18,7 @@ var SerialDevice1 string
 
 func getDeviceNames() []string {
 	var dn []string
-	for _,d := range Cfg.Device {
+	for _, d := range Cfg.Device {
 		dn = append(dn, d.Name)
 	}
 	return dn
@@ -50,7 +50,7 @@ func getSerialPorts() (usbports []string, perr error) {
 			usbports = append(usbports, port.Name)
 			for di, d := range Cfg.Device {
 				if strings.ToLower(port.VID) == strings.ToLower(d.Vendor) && strings.ToLower(port.PID) == strings.ToLower(d.Product) {
-					log.Printf("detected Device: %s\nportName: %s\n",Cfg.Device[di].Name, port.Name)
+					log.Printf("detected Device: %s\nportName: %s\n", Cfg.Device[di].Name, port.Name)
 					SelectedPortId = len(usbports) - 1
 					SelectedDeviceId = di
 					SerialDevice1 = port.Name
@@ -58,7 +58,7 @@ func getSerialPorts() (usbports []string, perr error) {
 			}
 		}
 	}
-	log.Printf("SelectedPortId: %d - SerialDevice1: %s - SelectedDeviceId: %d\n",SelectedPortId,SerialDevice1,SelectedDeviceId)
+	log.Printf("SelectedPortId: %d - SerialDevice1: %s - SelectedDeviceId: %d\n", SelectedPortId, SerialDevice1, SelectedDeviceId)
 	return usbports, nil
 }
 
@@ -105,10 +105,10 @@ func sendSerialCmd(cmd string) {
 	SerialResponse.String = ""
 	SerialResponse.Payload = ""
 
-	log.Printf("send cmd: %s\n",cmd)
+	log.Printf("send cmd: %s\n", cmd)
 	temp := sendSerial(cmd)
 	prepareResponse(temp)
-	log.Printf("response:\n\tCode: %d\n\tString: %s \n\tPayloadLen: %d\n",SerialResponse.Code,SerialResponse.String,len(SerialResponse.Payload))
+	log.Printf("response:\n\tCode: %d\n\tString: %s \n\tPayloadLen: %d\n", SerialResponse.Code, SerialResponse.String, len(SerialResponse.Payload))
 }
 
 func sendSerial(cmdStr string) string {
