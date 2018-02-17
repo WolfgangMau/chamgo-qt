@@ -6,10 +6,10 @@ import (
 	"github.com/WolfgangMau/chamgo-qt/nonces"
 	"github.com/therecipe/qt/widgets"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	"os"
 )
 
 var (
@@ -55,33 +55,33 @@ func serialTab() *widgets.QWidget {
 	serialConnectGroup.SetFixedSize2(220, 180)
 	leftTabLayout.AddWidget(serialConnectGroup, 1, 0x0020)
 
-	macrodir:=config.Apppath()+string(os.PathSeparator)+"macros"+string(os.PathSeparator)
+	macrodir := config.Apppath() + string(os.PathSeparator) + "macros" + string(os.PathSeparator)
 	log.Println("checking for macrodir: ", macrodir)
 	var macros []string
 	if macrodir != "" {
 		macros = config.GetFilesInFolder(macrodir, ".cmds")
 	}
-		if len(macros) > 0 {
-			log.Println("Macro-Files found: ",len(macros))
+	if len(macros) > 0 {
+		log.Println("Macro-Files found: ", len(macros))
 
-			macroGroupLayout := widgets.NewQHBoxLayout()
-			macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
-			macroGroup.SetFixedWidth(220)
-			macroSelect := widgets.NewQComboBox(macroGroup)
-			macroSelect.AddItems(macros)
-			macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
-			macroSend := widgets.NewQPushButton2("execute", nil)
-			macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
+		macroGroupLayout := widgets.NewQHBoxLayout()
+		macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
+		macroGroup.SetFixedWidth(220)
+		macroSelect := widgets.NewQComboBox(macroGroup)
+		macroSelect.AddItems(macros)
+		macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
+		macroSend := widgets.NewQPushButton2("execute", nil)
+		macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
 
-			macroGroup.SetLayout(macroGroupLayout)
-			leftTabLayout.AddWidget(macroGroup, 1, 0x0020)
+		macroGroup.SetLayout(macroGroupLayout)
+		leftTabLayout.AddWidget(macroGroup, 1, 0x0020)
 
-			macroSend.ConnectClicked(func(checked bool) {
+		macroSend.ConnectClicked(func(checked bool) {
 
 			if Connected {
 
 				log.Println("execute macro ", macroSelect.CurrentText())
-				cmds := config.ReadFileLines(config.Apppath()+string(os.PathSeparator)+"macros"+string(os.PathSeparator)+macroSelect.CurrentText())
+				cmds := config.ReadFileLines(config.Apppath() + string(os.PathSeparator) + "macros" + string(os.PathSeparator) + macroSelect.CurrentText())
 				if len(cmds) > 0 {
 					for _, c := range cmds {
 						if strings.Contains(strings.ToLower(c), "detectionmy?") {
@@ -103,8 +103,8 @@ func serialTab() *widgets.QWidget {
 
 							if len(noncemap) > 0 {
 								serialMonitor.AppendPlainText(fmt.Sprintf("found %d nonces\n\t#     NT     NR     AR", len(noncemap)))
-								for i,n := range noncemap {
-									serialMonitor.AppendPlainText(fmt.Sprintf("nonce #%d: %X %X %X",i+1,n.Nt,n.Nr,n.Ar))
+								for i, n := range noncemap {
+									serialMonitor.AppendPlainText(fmt.Sprintf("nonce #%d: %X %X %X", i+1, n.Nt, n.Nr, n.Ar))
 								}
 							}
 							serialMonitor.AppendPlainText(fmt.Sprintf("<- %s\nuid: %x\nbuff (%d): %X", responsecode, uid, len(buff), buff))
@@ -183,7 +183,6 @@ func serialTab() *widgets.QWidget {
 		}
 
 	})
-
 
 	/********************************************** Serial Monitor *********************************************/
 

@@ -2,18 +2,18 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
+	"fmt"
+	"github.com/WolfgangMau/chamgo-qt/nonces"
 	"github.com/WolfgangMau/chamgo-qt/xmodem"
 	"github.com/therecipe/qt/widgets"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/WolfgangMau/chamgo-qt/nonces"
-	"fmt"
-	"os/exec"
-	"encoding/hex"
 )
 
 var myTime time.Time
@@ -165,7 +165,7 @@ func mfkey32Slots() {
 			serialMonitor.AppendPlainText("-> " + strings.Replace(strings.Replace(detectionCmd, "\r", "", -1), "\n", "", -1))
 
 			// send cmd ang get the expected 218 bytes (208 nonce + 2 crc + 8 cmd-response (100:OK\n\r)
-			SerialSendOnly(detectionCmd+"?")
+			SerialSendOnly(detectionCmd + "?")
 			buff := GetSpecificBytes(218)
 			//buffer should be empty - only to get sure
 			SerialPort.ResetInputBuffer()
@@ -180,18 +180,18 @@ func mfkey32Slots() {
 			var skey string
 			if len(noncemap) > 0 {
 				MyTabs.SetCurrentIndex(1)
-				serialMonitor.AppendPlainText(fmt.Sprintf("Fond %d nonces for UID: %04X - test possible comboinations ...",len(noncemap), uid))
+				serialMonitor.AppendPlainText(fmt.Sprintf("Fond %d nonces for UID: %04X - test possible comboinations ...", len(noncemap), uid))
 				log.Println("  UID      NT0      NR0      AR0      NT1      NR1      AR1")
-				for i1:=0; i1<len(noncemap);i1++ {
-					for i2:=0; i2<len(noncemap);i2++ {
-						if i1 == i2  || i1 > i2 {
+				for i1 := 0; i1 < len(noncemap); i1++ {
+					for i2 := 0; i2 < len(noncemap); i2++ {
+						if i1 == i2 || i1 > i2 {
 							continue
 						} else {
 							if noncemap[i1].Key == noncemap[i2].Key {
 								if noncemap[i1].Key == 0x60 {
-									skey ="A"
+									skey = "A"
 								} else {
-									skey ="B"
+									skey = "B"
 								}
 								args := []string{hex.EncodeToString(uid), hex.EncodeToString(noncemap[i1].Nt), hex.EncodeToString(noncemap[i1].Nr), hex.EncodeToString(noncemap[i1].Ar), hex.EncodeToString(noncemap[i2].Nt), hex.EncodeToString(noncemap[i2].Nr), hex.EncodeToString(noncemap[i2].Ar)}
 								log.Printf("%04X %04X %04X %04X %04X %04X %04X\n", uid, noncemap[i1].Nt, noncemap[i1].Nr, noncemap[i1].Ar, noncemap[i2].Nt, noncemap[i2].Nr, noncemap[i2].Ar)
@@ -202,7 +202,7 @@ func mfkey32Slots() {
 									if strings.Contains(res, "Found Key") {
 										key := strings.Split(res, "[")[1]
 										key = key[:12]
-										serialMonitor.AppendPlainText(fmt.Sprintf("Slot %d: Possible Key %s for Nonces on  Blocks %d & %d = %s",i+1,skey, noncemap[i1].Sector, noncemap[i2].Sector, key))
+										serialMonitor.AppendPlainText(fmt.Sprintf("Slot %d: Possible Key %s for Nonces on  Blocks %d & %d = %s", i+1, skey, noncemap[i1].Sector, noncemap[i2].Sector, key))
 
 									}
 								}
@@ -280,12 +280,14 @@ func downloadSlots() {
 			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 		return
 	}
-	var data bytes.Buffer
+
 	var (
 		success int
 		failed  int
 	)
 	var filename string
+	var data bytes.Buffer
+
 	for i, s := range Slots {
 		hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 		sel := s.slot.IsChecked()
@@ -441,12 +443,12 @@ func getPosFromList(val string, array []string) (exists bool, index int) {
 	return
 }
 
-func execCmd(cmdstr string, args []string) (res string,err error) {
-	res=""
-	err=nil
+func execCmd(cmdstr string, args []string) (res string, err error) {
+	res = ""
+	err = nil
 
 	//set local path
-	os.Setenv("PATH", os.Getenv("PATH")+":"+ os.Getenv("PWD")+"/bin/")
+	os.Setenv("PATH", os.Getenv("PATH")+":"+os.Getenv("PWD")+"/bin/")
 
 	// Create an *exec.Cmd
 	cmd := exec.Command(cmdstr, args...)
@@ -460,12 +462,12 @@ func execCmd(cmdstr string, args []string) (res string,err error) {
 	//log.Printf("run Cmd: %s %s\n",cmd.Path,cmd.Args)
 	err = cmd.Run()
 	if err != nil {
-		log.Printf("Error: %s\n",err)
+		log.Printf("Error: %s\n", err)
 		return res, err
 	}
 
 	// Only output the commands stdout
 	res = string(cmdOutput.Bytes())
 	//log.Printf("RES: %s\n",res)
-	return res,err
+	return res, err
 }

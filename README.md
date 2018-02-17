@@ -1,15 +1,20 @@
 ## chamgo-qt
 QT based GUI for Chameleon-RevE-Rebooted &amp; Chameleon RevG - written in Golang
-not fully functional yet!
 
-what works in general:
+what works in general (on RevE-Rebooted & RevG):
+- USB-Device detection
 - Serial connection
-- display Slot-Config
-- change Slot-Config
-- Serial-Terminal
-- upload dump
-- download dump (except for linux)
+- display /edit  Slot-Config
+- Serial Terminal
+- upload / download dump
+- get & decode detection-nonces for the use with mfkey32v2 (RevE-Rebooted)
 
+what is missing:
+- display RSSI
+- integration of mfkey32v2 (RevE-Rebooted)
+- logmode=live (RevG)
+- logdownload  (RevG)
+- implementation of crc16 (RevG)
 
 to install/create the qt-bindings follow the instuctions in the wiki: https://github.com/therecipe/qt/wiki
 

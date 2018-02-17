@@ -78,22 +78,22 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 					CHK := int(Checksum(myPacket.Payload, 0))
 					if CHK == myPacket.Checksum && myPacket.checkPaylod() {
 						//packet OK
-						log.Printf("Checksum OK for Packet: %d\n", myPacket.PacketNum)
+						log.Println("Checksum OK for Packet: ", myPacket.PacketNum)
 						protocmd[0] = ACK
 						success++
 						data.Write(myPacket.Payload)
 					} else {
 						//something went wrong
-						log.Printf("something went wront with Packet %d\n", myPacket.PacketNum)
+						log.Println("something went wront with Packet: ", myPacket.PacketNum)
 						if !myPacket.checkPaylod() && failed < 10 {
 
 							if byte(myPacket.PacketNum) == EOF || byte(myPacket.PacketNum) == EOT {
-								log.Printf("Byte 0x%X received (EOF/EOT)\n", myPacket.PacketNum)
+								log.Println("transmission end at Block : ", myPacket.PacketNum)
 								//EOT & EOF are no failures
 								failed--
 							} else {
 								//message for sender
-								log.Printf("resend ... Byte 0x%X received\n", myPacket.PacketNum)
+								log.Println("resend ... Block ", myPacket.PacketNum)
 								failed++
 								blockReceived = true
 								protocmd[0] = NAK

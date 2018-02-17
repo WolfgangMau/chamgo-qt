@@ -1,12 +1,12 @@
 package main
 
 import (
+	"github.com/WolfgangMau/chamgo-qt/config"
 	"github.com/therecipe/qt/gui"
 	"github.com/therecipe/qt/widgets"
-	"strconv"
-	"os"
-	"github.com/WolfgangMau/chamgo-qt/config"
 	"log"
+	"os"
+	"strconv"
 )
 
 type Slot struct {
@@ -139,9 +139,9 @@ func allSlots() *widgets.QWidget {
 	abtnLayout := widgets.NewQGridLayout(nil)
 
 	var mfkeyBinPresent = true
-	if _, err := os.Stat(config.Apppath()+string(os.PathSeparator)+"bin"+string(os.PathSeparator)+Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err)  {
+	if _, err := os.Stat(config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err) {
 		mfkeyBinPresent = false
-		log.Println("No mfkey32 binary configured or found in "+config.Apppath()+string(os.PathSeparator)+"bin"+string(os.PathSeparator)+Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+		log.Println("No mfkey32 binary configured or found in " + config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 	}
 
 	var withdet = true
@@ -154,7 +154,7 @@ func allSlots() *widgets.QWidget {
 		actionButtons[i].b = widgets.NewQPushButton2(s, nil)
 		if s == "mfkey32" {
 			if !mfkeyBinPresent {
-				actionButtons[i].b.SetToolTip("No mfkey32 binary configured or found in\n"+config.Apppath()+string(os.PathSeparator)+"bin"+string(os.PathSeparator)+Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+				actionButtons[i].b.SetToolTip("No mfkey32 binary configured or found in\n" + config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 				actionButtons[i].b.SetToolTipDuration(20000)
 				actionButtons[i].b.SetEnabled(mfkeyBinPresent)
 			} else {

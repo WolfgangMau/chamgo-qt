@@ -14,9 +14,8 @@ var Statusbar *widgets.QStatusBar
 var DeviceActions config.DeviceActions
 var MyTabs *widgets.QTabWidget
 
-
 func initcfg() {
-	if _,err := getSerialPorts(); err != nil {
+	if _, err := getSerialPorts(); err != nil {
 		log.Println(err)
 	}
 	Cfg.Load()
