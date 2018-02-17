@@ -30,6 +30,7 @@ device:
     clear: CLEARMY
     help: HELPMY
     rssi: RSSIMY
+    detection: DETECTIONMY
 - name: "Chameleon RevG"
   vendor: "16d0"
   product: "04b2"

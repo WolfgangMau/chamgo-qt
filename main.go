@@ -7,14 +7,26 @@ import (
 	"os"
 )
 
+//Global Variables - StateStorage
 var AppName = "Chamgo-QT"
 var Cfg config.Config
 var Statusbar *widgets.QStatusBar
 var DeviceActions config.DeviceActions
+var MyTabs *widgets.QTabWidget
+
+
+func initcfg() {
+	if _,err := getSerialPorts(); err != nil {
+		log.Println(err)
+	}
+	Cfg.Load()
+	dn := Cfg.Device[SelectedDeviceId].Name
+	DeviceActions.Load(Cfg.Device[SelectedDeviceId].CmdSet, dn)
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	Cfg.Load()
+	initcfg()
 	AppName = Cfg.Gui.Title
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -28,12 +40,12 @@ func main() {
 
 	mainlayout := widgets.NewQVBoxLayout()
 
-	tabWidget := widgets.NewQTabWidget(nil)
-	tabWidget.AddTab(allSlots(), "Tags")
-	tabWidget.AddTab(serialTab(), "Serial")
-	tabWidget.SetCurrentIndex(1)
+	MyTabs = widgets.NewQTabWidget(nil)
+	MyTabs.AddTab(allSlots(), "Tags")
+	MyTabs.AddTab(serialTab(), "Serial")
+	MyTabs.SetCurrentIndex(1)
 
-	mainlayout.AddWidget(tabWidget, 0, 0x0020)
+	mainlayout.AddWidget(MyTabs, 0, 0x0020)
 	mainlayout.SetAlign(33)
 
 	mainWidget := widgets.NewQWidget(nil, 0)

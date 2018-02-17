@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"os"
 )
 
 var (
@@ -52,20 +53,73 @@ func serialTab() *widgets.QWidget {
 	serialConnectGroup := widgets.NewQGroupBox2("Serial Connection", nil)
 	serialConnectGroup.SetLayout(serConLayout)
 	serialConnectGroup.SetFixedSize2(220, 180)
-
-	macroGroupLayout := widgets.NewQHBoxLayout()
-	macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
-	macroGroup.SetFixedWidth(220)
-	macroSelect := widgets.NewQComboBox(macroGroup)
-	macroSelect.AddItems(config.GetFilesInFolder("macros", ".cmds"))
-	macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
-	macroSend := widgets.NewQPushButton2("execute", nil)
-	macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
-
-	macroGroup.SetLayout(macroGroupLayout)
-
 	leftTabLayout.AddWidget(serialConnectGroup, 1, 0x0020)
-	leftTabLayout.AddWidget(macroGroup, 1, 0x0020)
+
+	macrodir:=config.Apppath()+string(os.PathSeparator)+"macros"+string(os.PathSeparator)
+	log.Println("checking for macrodir: ", macrodir)
+	var macros []string
+	if macrodir != "" {
+		macros = config.GetFilesInFolder(macrodir, ".cmds")
+	}
+		if len(macros) > 0 {
+			log.Println("Macro-Files found: ",len(macros))
+
+			macroGroupLayout := widgets.NewQHBoxLayout()
+			macroGroup := widgets.NewQGroupBox2("Command Macros", nil)
+			macroGroup.SetFixedWidth(220)
+			macroSelect := widgets.NewQComboBox(macroGroup)
+			macroSelect.AddItems(macros)
+			macroGroupLayout.AddWidget(macroSelect, 1, 0x0020)
+			macroSend := widgets.NewQPushButton2("execute", nil)
+			macroGroupLayout.AddWidget(macroSend, 1, 0x0020)
+
+			macroGroup.SetLayout(macroGroupLayout)
+			leftTabLayout.AddWidget(macroGroup, 1, 0x0020)
+
+			macroSend.ConnectClicked(func(checked bool) {
+
+			if Connected {
+
+				log.Println("execute macro ", macroSelect.CurrentText())
+				cmds := config.ReadFileLines(config.Apppath()+string(os.PathSeparator)+"macros"+string(os.PathSeparator)+macroSelect.CurrentText())
+				if len(cmds) > 0 {
+					for _, c := range cmds {
+						if strings.Contains(strings.ToLower(c), "detectionmy?") {
+							serialMonitor.AppendPlainText("-> " + strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
+
+							// send cmd ang get the expected 218 bytes (208 nonce + 2 crc + 8 cmd-response (100:OK\n\r)
+							SerialSendOnly(c)
+							buff := GetSpecificBytes(218)
+							//buffer should be empty - only to get sure
+							SerialPort.ResetInputBuffer()
+
+							responsecode := strings.Replace(strings.Replace(string(buff[len(buff)-8:]), "\r", "", -1), "\n", "", -1)
+							log.Println("len enc: ", len(buff))
+							buff = nonces.DecryptData(buff[0:len(buff)-10], 123321, 208)
+							uid := buff[0:4]
+							serialMonitor.AppendPlainText(fmt.Sprintf("uid: %04X\n", uid))
+
+							noncemap := nonces.ExtractNonces(buff)
+
+							if len(noncemap) > 0 {
+								serialMonitor.AppendPlainText(fmt.Sprintf("found %d nonces\n\t#     NT     NR     AR", len(noncemap)))
+								for i,n := range noncemap {
+									serialMonitor.AppendPlainText(fmt.Sprintf("nonce #%d: %X %X %X",i+1,n.Nt,n.Nr,n.Ar))
+								}
+							}
+							serialMonitor.AppendPlainText(fmt.Sprintf("<- %s\nuid: %x\nbuff (%d): %X", responsecode, uid, len(buff), buff))
+						} else {
+							sendSerialCmd(c)
+							time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
+							serialMonitor.AppendPlainText(fmt.Sprintf("-> cmd: %s response: %s", c, SerialResponse.Payload))
+						}
+						serialMonitor.Repaint()
+					}
+				}
+			}
+		})
+	}
+
 	serialTabLayout.AddLayout(leftTabLayout, 0)
 
 	serialConnectButton.ConnectClicked(func(checked bool) {
@@ -83,8 +137,7 @@ func serialTab() *widgets.QWidget {
 					widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
 				log.Println("error on connect: ", err)
 			} else {
-				dn := Cfg.Device[SelectedDeviceId].Name
-				DeviceActions.Load(Cfg.Device[SelectedDeviceId].CmdSet, dn)
+				initcfg()
 				if len(DeviceActions.GetUid) <= 0 {
 					log.Println("no action for 'getUid!?' ", DeviceActions.GetUid)
 				}
@@ -107,6 +160,7 @@ func serialTab() *widgets.QWidget {
 						buttonClicked(0)
 						buttonClicked(4)
 						buttonClicked(1)
+						MyTabs.SetCurrentIndex(0)
 					}
 				} else {
 					widgets.QMessageBox_Information(nil, "OK", "no Version Response from Device!",
@@ -130,42 +184,7 @@ func serialTab() *widgets.QWidget {
 
 	})
 
-	macroSend.ConnectClicked(func(checked bool) {
-		if Connected {
-			log.Println("execute macro ", macroSelect.CurrentText())
-			cmds := config.ReadFileLines(macroSelect.CurrentText())
-			if len(cmds) > 0 {
-				for _, c := range cmds {
-					if strings.Contains(strings.ToLower(c), "detectionmy?") {
-						serialMonitor.AppendPlainText("-> " + strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
 
-						// send cmd ang get the expected 218 bytes (208 nonce + 2 crc + 8 cmd-response (100:OK\n\r)
-						SerialSendOnly(c)
-						buff := GetSpecificBytes(218)
-						//buffer should be empty - only to get sure
-						SerialPort.ResetInputBuffer()
-
-						responsecode := strings.Replace(strings.Replace(string(buff[len(buff)-8:]), "\r", "", -1), "\n", "", -1)
-						log.Println("len enc: ", len(buff))
-						buff = nonces.DecryptData(buff[0:len(buff)-10], 123321, 208)
-						uid := buff[0:4]
-						empty := buff[4:15]
-						log.Printf("uid: %x   crc: %x   empty: %x\n", uid, empty[0:1], empty[1:])
-						noncemap := nonces.ExtractNonces(buff)
-						log.Printf("found %d nonces\n", len(noncemap))
-
-						serialMonitor.AppendPlainText(fmt.Sprintf("<- %s\nuid: %x\nbuff (%d): %x\n", responsecode, uid, len(buff), buff))
-						serialMonitor.Repaint()
-					} else {
-						sendSerialCmd(strings.Replace(strings.Replace(c, "\r", "", -1), "\n", "", -1))
-						time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
-						serialMonitor.AppendPlainText(fmt.Sprintf("<-Code: %d  String: %s Payload: %s\n", SerialResponse.Code, SerialResponse.String, SerialResponse.Payload))
-						serialMonitor.Repaint()
-					}
-				}
-			}
-		}
-	})
 	/********************************************** Serial Monitor *********************************************/
 
 	serMonitorLayout := widgets.NewQVBoxLayout()

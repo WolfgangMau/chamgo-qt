@@ -11,9 +11,10 @@ import (
 )
 
 var Connected bool
-var SerialPort serial.Port
 var SelectedPortId int
 var SelectedDeviceId int
+
+var SerialPort serial.Port
 var SerialDevice string
 var SerialResponse serialResponse
 
@@ -86,7 +87,6 @@ func connectSerial(selSerialPort string) (err error) {
 			StopBits: serial.OneStopBit,
 		}
 		SerialPort, err = serial.Open(selSerialPort, mode)
-		time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.ConeectionTimeout))
 		if err != nil {
 			log.Println("error serial connect ", err)
 		} else {

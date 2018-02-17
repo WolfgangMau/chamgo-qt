@@ -10,6 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/WolfgangMau/chamgo-qt/nonces"
+	"fmt"
+	"os/exec"
+	"encoding/hex"
 )
 
 var myTime time.Time
@@ -139,10 +143,74 @@ func activateSlots() {
 
 //ToDO: implemetation
 func mfkey32Slots() {
+	if !Connected || countSelected() < 1 {
+		if !Connected {
+			return
+		}
+		widgets.QMessageBox_Information(nil, "OK", "please select at least one Slot\nwhich was set to DETECTION",
+			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		return
+	}
+	detectionCmd, ok := Cfg.Device[SelectedDeviceId].CmdSet["detection"]
+	if !ok {
+		widgets.QMessageBox_Information(nil, "OK", "Sorry, but this Device hs not set a 'detection' cmd!",
+			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		return
+	}
 	for i, s := range Slots {
 		sel := s.slot.IsChecked()
 		if sel {
-			log.Printf("I should probably calc keys for Slot %d\n", i)
+			hardwareSlot := i + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
+			serialMonitor.AppendPlainText("-> " + strings.Replace(strings.Replace(detectionCmd, "\r", "", -1), "\n", "", -1))
+
+			// send cmd ang get the expected 218 bytes (208 nonce + 2 crc + 8 cmd-response (100:OK\n\r)
+			SerialSendOnly(detectionCmd+"?")
+			buff := GetSpecificBytes(218)
+			//buffer should be empty - only to get sure
+			SerialPort.ResetInputBuffer()
+
+			//responsecode := strings.Replace(strings.Replace(string(buff[len(buff)-8:]), "\r", "", -1), "\n", "", -1)
+			log.Println("len enc: ", len(buff))
+			buff = nonces.DecryptData(buff[0:len(buff)-10], 123321, 208)
+			uid := buff[0:4]
+			serialMonitor.AppendPlainText(fmt.Sprintf("uid: %x\n", uid))
+
+			noncemap := nonces.ExtractNonces(buff)
+			var skey string
+			if len(noncemap) > 0 {
+				MyTabs.SetCurrentIndex(1)
+				serialMonitor.AppendPlainText(fmt.Sprintf("Fond %d nonces for UID: %04X - test possible comboinations ...",len(noncemap), uid))
+				log.Println("  UID      NT0      NR0      AR0      NT1      NR1      AR1")
+				for i1:=0; i1<len(noncemap);i1++ {
+					for i2:=0; i2<len(noncemap);i2++ {
+						if i1 == i2  || i1 > i2 {
+							continue
+						} else {
+							if noncemap[i1].Key == noncemap[i2].Key {
+								if noncemap[i1].Key == 0x60 {
+									skey ="A"
+								} else {
+									skey ="B"
+								}
+								args := []string{hex.EncodeToString(uid), hex.EncodeToString(noncemap[i1].Nt), hex.EncodeToString(noncemap[i1].Nr), hex.EncodeToString(noncemap[i1].Ar), hex.EncodeToString(noncemap[i2].Nt), hex.EncodeToString(noncemap[i2].Nr), hex.EncodeToString(noncemap[i2].Ar)}
+								log.Printf("%04X %04X %04X %04X %04X %04X %04X\n", uid, noncemap[i1].Nt, noncemap[i1].Nr, noncemap[i1].Ar, noncemap[i2].Nt, noncemap[i2].Nr, noncemap[i2].Ar)
+								res, err := execCmd("mfkey32v2", args)
+								if err != nil {
+									log.Println(err)
+								} else {
+									if strings.Contains(res, "Found Key") {
+										key := strings.Split(res, "[")[1]
+										key = key[:12]
+										serialMonitor.AppendPlainText(fmt.Sprintf("Slot %d: Possible Key %s for Nonces on  Blocks %d & %d = %s",i+1,skey, noncemap[i1].Sector, noncemap[i2].Sector, key))
+
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -371,4 +439,33 @@ func getPosFromList(val string, array []string) (exists bool, index int) {
 	}
 
 	return
+}
+
+func execCmd(cmdstr string, args []string) (res string,err error) {
+	res=""
+	err=nil
+
+	//set local path
+	os.Setenv("PATH", os.Getenv("PATH")+":"+ os.Getenv("PWD")+"/bin/")
+
+	// Create an *exec.Cmd
+	cmd := exec.Command(cmdstr, args...)
+
+	// Stdout buffer
+	cmdOutput := &bytes.Buffer{}
+	// Attach buffer to command
+	cmd.Stdout = cmdOutput
+
+	// Execute command
+	//log.Printf("run Cmd: %s %s\n",cmd.Path,cmd.Args)
+	err = cmd.Run()
+	if err != nil {
+		log.Printf("Error: %s\n",err)
+		return res, err
+	}
+
+	// Only output the commands stdout
+	res = string(cmdOutput.Bytes())
+	//log.Printf("RES: %s\n",res)
+	return res,err
 }

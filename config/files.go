@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"os"
 	"bufio"
+	"strings"
 )
 
 func GetFilesInFolder(root string, ext string) []string {
@@ -14,7 +15,7 @@ func GetFilesInFolder(root string, ext string) []string {
 		log.Printf("path: %s\n", path)
 		if filepath.Ext(path) == ext {
 			log.Printf("add %s\n", path)
-			files = append(files, path)
+			files = append(files, strings.Replace(path,root,"",1))
 		}
 		return nil
 	})
@@ -30,7 +31,7 @@ func GetFilesInFolder(root string, ext string) []string {
 func ReadFileLines(path string) (res []string) {
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	defer file.Close()
 
@@ -40,7 +41,7 @@ func ReadFileLines(path string) (res []string) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	return res
 }

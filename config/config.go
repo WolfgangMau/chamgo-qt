@@ -30,6 +30,7 @@ type Config struct {
 				ConeectionTimeout 	int `yaml:"connectiontimeout"`
 				Autoconnect 		bool `yaml:"autoconnect"`
 			} `yaml:"serial"`
+			MfkeyBin string `yaml:"mfkeybin"`
 		} `yaml:"config"`
 	} `yaml:"device"`
 	Gui struct {
@@ -89,6 +90,16 @@ func Configpath() string {
 		return ""
 	}
 	return configpath
+}
+
+func Apppath() string {
+
+	appdir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Printf("no executable-path found!?!\n%s\n",err)
+		return ""
+	}
+	return appdir
 }
 
 type DeviceActions struct {
