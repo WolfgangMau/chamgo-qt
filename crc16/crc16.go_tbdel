@@ -2,12 +2,13 @@ package main
 
 import (
 	"log"
+	"fmt"
 )
 
 func main() {
 	//00000000 00003230 30313138 0002031b
 	//1412020f 0c0c0010 00000835 00016503
-	hexstr:="10539A23"
+	hexstr:="6048"
 	strhex := Split2Hex(hexstr)
 	t := MakeTable(CRC16_CRC_A)
 	checksum5:=Checksum(strhex, t)

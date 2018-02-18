@@ -52,6 +52,7 @@ var Slotboxes [8]SlotBox
 var populated = false
 var TagModes []string
 var TagButtons []string
+var RssiVal *widgets.QLineEdit
 
 func allSlots() *widgets.QWidget {
 	bold := gui.NewQFont()
@@ -139,29 +140,31 @@ func allSlots() *widgets.QWidget {
 	abtnLayout := widgets.NewQGridLayout(nil)
 
 	var mfkeyBinPresent = true
-	if _, err := os.Stat(config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err) {
-		mfkeyBinPresent = false
-		log.Println("No mfkey32 binary configured or found in " + config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+	if len(Cfg.Device[SelectedDeviceId].Config.MfkeyBin) > 0 {
+		if _, err := os.Stat(config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err) {
+			mfkeyBinPresent = false
+			log.Println("No mfkey32 binary configured or found in " + config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+		}
 	}
 
 	var withdet = true
 	_, ok := Cfg.Device[SelectedDeviceId].CmdSet["detection"]
-	if !ok || !mfkeyBinPresent {
+	if !ok || !mfkeyBinPresent || Cfg.Device[SelectedDeviceId].Config.MfkeyBin == "" {
 		withdet = false
 	}
+	log.Print("MfkeyBin: ", Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 
 	for i, s := range ActionButtons {
 		actionButtons[i].b = widgets.NewQPushButton2(s, nil)
 		if s == "mfkey32" {
-			if !mfkeyBinPresent {
+			actionButtons[i].b.SetEnabled(withdet)
+			if !withdet {
 				actionButtons[i].b.SetToolTip("No mfkey32 binary configured or found in\n" + config.Apppath() + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
-				actionButtons[i].b.SetToolTipDuration(20000)
-				actionButtons[i].b.SetEnabled(mfkeyBinPresent)
-			} else {
-				actionButtons[i].b.SetEnabled(withdet)
 			}
 		}
+
 		abtnLayout.AddWidget(actionButtons[i].b, 0, i, 0x0004)
+
 	}
 	AButtonGroup := widgets.NewQGroupBox2("Available Actions", nil)
 	AButtonGroup.SetLayout(abtnLayout)

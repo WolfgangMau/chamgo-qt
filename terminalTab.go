@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/WolfgangMau/chamgo-qt/config"
+	"github.com/WolfgangMau/chamgo-qt/crc16"
 	"github.com/WolfgangMau/chamgo-qt/nonces"
 	"github.com/therecipe/qt/widgets"
 	"log"
@@ -10,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/WolfgangMau/chamgo-qt/xmodem"
 )
 
 var (
@@ -17,8 +20,11 @@ var (
 	serialMonitor    *widgets.QPlainTextEdit
 	serialPortSelect *widgets.QComboBox
 	deviceSelect     *widgets.QComboBox
+	CrcVal           *widgets.QLineEdit
+	XorVal           *widgets.QLineEdit
 )
 
+//noinspection GoPrintFunctions
 func serialTab() *widgets.QWidget {
 	serialTabLayout := widgets.NewQHBoxLayout()
 	leftTabLayout := widgets.NewQVBoxLayout()
@@ -54,6 +60,59 @@ func serialTab() *widgets.QWidget {
 	serialConnectGroup.SetLayout(serConLayout)
 	serialConnectGroup.SetFixedSize2(220, 180)
 	leftTabLayout.AddWidget(serialConnectGroup, 1, 0x0020)
+
+	ToolsGroup := widgets.NewQGroupBox2("Fuctions", nil)
+	ToolsLayout := widgets.NewQVBoxLayout()
+	ToolsLayout.SetAlign(0x0020)
+	ToolsLayout.SetSpacing(1)
+	ToolsGroup.SetFixedWidth(220)
+
+	//RSSI
+	rssiLayout := widgets.NewQHBoxLayout()
+	rssiBtn := widgets.NewQPushButton2("get RSSI", nil)
+	rssiBtn.SetFixedWidth(100)
+	rssiBtn.ConnectClicked(func(checked bool) {
+		getRssi()
+	})
+	rssiLayout.AddWidget(rssiBtn, 1, 0x0020)
+	RssiVal = widgets.NewQLineEdit(nil)
+	RssiVal.SetAlignment(0x0002)
+	rssiLayout.AddWidget(RssiVal, 0, 0x0020)
+	ToolsLayout.AddLayout(rssiLayout, 0)
+
+	// CRC16
+	crcLayout := widgets.NewQHBoxLayout()
+	crcBtn := widgets.NewQPushButton2("calc CRC", nil)
+	crcBtn.SetFixedWidth(100)
+	crcBtn.ConnectClicked(func(checked bool) {
+		CrcVal.SetText(crc16.GetCRCA(CrcVal.Text()))
+		CrcVal.Repaint()
+	})
+	crcLayout.AddWidget(crcBtn, 1, 0x0020)
+	CrcVal = widgets.NewQLineEdit(nil)
+	CrcVal.SetAlignment(0x0002)
+	CrcVal.ConnectReturnPressed(crcBtn.Click)
+	crcLayout.AddWidget(CrcVal, 0, 0x0020)
+	ToolsLayout.AddLayout(crcLayout, 0)
+
+	// XOR/BCC
+	xorLayout := widgets.NewQHBoxLayout()
+	xorBtn := widgets.NewQPushButton2("XOR/BCC", nil)
+	xorBtn.SetFixedWidth(100)
+	xorBtn.ConnectClicked(func(checked bool) {
+		temp, _ := hex.DecodeString(XorVal.Text())
+		XorVal.SetText(strings.ToUpper(hex.EncodeToString([]byte{crc16.GetBCC(temp)})))
+		CrcVal.Repaint()
+	})
+	xorLayout.AddWidget(xorBtn, 1, 0x0020)
+	XorVal = widgets.NewQLineEdit(nil)
+	XorVal.SetAlignment(0x0002)
+	XorVal.ConnectReturnPressed(xorBtn.Click)
+	xorLayout.AddWidget(XorVal, 0, 0x0020)
+	ToolsLayout.AddLayout(xorLayout, 0)
+
+	ToolsGroup.SetLayout(ToolsLayout)
+	leftTabLayout.AddWidget(ToolsGroup, 1, 0x0020)
 
 	macrodir := config.Apppath() + string(os.PathSeparator) + "macros" + string(os.PathSeparator)
 	log.Println("checking for macrodir: ", macrodir)
@@ -109,9 +168,17 @@ func serialTab() *widgets.QWidget {
 							}
 							serialMonitor.AppendPlainText(fmt.Sprintf("<- %s\nuid: %x\nbuff (%d): %X", responsecode, uid, len(buff), buff))
 						} else {
-							sendSerialCmd(c)
-							time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
-							serialMonitor.AppendPlainText(fmt.Sprintf("-> cmd: %s response: %s", c, SerialResponse.Payload))
+							if strings.Contains(strings.ToLower(c), "logdownload") {
+								SerialSendOnly(c)
+								time.Sleep(time.Millisecond * 500)
+								success, failed, data := xmodem.Receive(SerialPort, 15)
+								serialMonitor.AppendPlainText(fmt.Sprintf("\nLogReceive Blocks Success: %d Failed: %d\nData:\n%s\n",success,failed,string(hex.EncodeToString(data.Bytes()))))
+
+							} else {
+								sendSerialCmd(c)
+								time.Sleep(time.Millisecond * time.Duration(Cfg.Device[SelectedDeviceId].Config.Serial.WaitForReceive))
+								serialMonitor.AppendPlainText(fmt.Sprintf("-> cmd: %s response: %s", c, SerialResponse.Payload))
+							}
 						}
 						serialMonitor.Repaint()
 					}

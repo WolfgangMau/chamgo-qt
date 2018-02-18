@@ -1,10 +1,10 @@
 package xmodem
 
 import (
-	"log"
 	"bytes"
-	"time"
 	"go.bug.st/serial.v1"
+	"log"
+	"time"
 )
 
 //xmodem
@@ -21,10 +21,10 @@ type Xblock struct {
 	PacketNum int    // 1 byte current Packet number
 	PacketInv int    // 1 byte (0xff-packetNum)
 	Payload   []byte // 128 byte payload
-	Checksum int    // 1 byte complement checksum of the payload
+	Checksum  int    // 1 byte complement checksum of the payload
 }
 
-func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer){
+func Receive(serialPort serial.Port, size int) (success int, failed int, data bytes.Buffer) {
 
 	oBuffer := make([]byte, 1)
 	dBuffer := make([]byte, 1024)
@@ -34,10 +34,11 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 	protocmd = append(protocmd, NAK)
 
 	success = 0
-	failed  = 0
+	failed = 0
 
 	var getBytes = true
-	for getBytes && success<32{
+	for data.Len() < size {
+		myPacket := Xblock{}
 
 		// init tranafer
 		if _, err := serialPort.Write(protocmd); err != nil {
@@ -47,6 +48,11 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 
 		if protocmd[0] == EOT || protocmd[0] == EOF || protocmd[0] == CAN {
 			log.Printf("tranfer end.")
+			getBytes=false
+			if success == 0 {
+				success++
+				data.Write(myPacket.Payload)
+			}
 			break
 		}
 
@@ -57,7 +63,6 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 
 		//start receiving blocks
 		if getBytes {
-			myPacket := Xblock{}
 			bytesReceived := 0
 			blockReceived := false
 			for !blockReceived {
@@ -113,7 +118,6 @@ func Receive(serialPort serial.Port) (success int, failed int, data bytes.Buffer
 	}
 	return success, failed, data
 }
-
 
 func Send(serialPort serial.Port, p []Xblock) {
 	oBuffer := make([]byte, 1)
@@ -176,7 +180,6 @@ func Send(serialPort serial.Port, p []Xblock) {
 		}
 	}
 }
-
 
 func Checksum(b []byte, cs byte) byte {
 	for _, d := range b {

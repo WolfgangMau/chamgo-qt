@@ -1,10 +1,11 @@
 // Package crc16 implements the 16-bit cyclic redundancy check, or CRC-16, checksum.
 //
 // It provides parameters for the majority of well-known CRC-16 algorithms.
-package main
+package crc16
 
 import (
 	"encoding/hex"
+	"fmt"
 )
 
 // Params represents parameters of CRC-16 algorithms.
@@ -101,10 +102,10 @@ func ReverseUint16(val uint16) uint16 {
 }
 
 //calculate BCC of a Mifare Classic
-func GetBCC(input []byte) (bcc byte)  {
+func GetBCC(input []byte) (bcc byte) {
 	bcc = byte(0x0)
 
-	if len(input) > 0  {
+	if len(input) > 0 {
 		for i := 0; i < len(input); i++ {
 			bcc ^= input[i]
 		}
@@ -118,4 +119,12 @@ func Split2Hex(s string) []byte {
 		return nil
 	}
 	return res
+}
+
+func GetCRCA(hexstr string) string {
+	strhex := Split2Hex(hexstr)
+	t := MakeTable(CRC16_CRC_A)
+	checksum5 := Checksum(strhex, t)
+	var h, l uint8 = uint8(checksum5 >> 8), uint8(checksum5 & 0xff)
+	return fmt.Sprintf("%02X%02X", l, h)
 }

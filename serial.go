@@ -33,6 +33,7 @@ func getDeviceNames() []string {
 	return dn
 }
 
+//noinspection ALL
 func getSerialPorts() (usbports []string, perr error) {
 	//Devices.load()
 	ports2, err := enumerator.GetDetailedPortsList()
@@ -59,6 +60,7 @@ func getSerialPorts() (usbports []string, perr error) {
 			usbports = append(usbports, port.Name)
 			for di, d := range Cfg.Device {
 				if strings.ToLower(port.VID) == strings.ToLower(d.Vendor) && strings.ToLower(port.PID) == strings.ToLower(d.Product) {
+					//noinspection ALL
 					log.Printf("detected Device: %s\nportName: %s\n", Cfg.Device[di].Name, port.Name)
 					SelectedPortId = len(usbports) - 1
 					SelectedDeviceId = di
@@ -71,6 +73,7 @@ func getSerialPorts() (usbports []string, perr error) {
 	return usbports, nil
 }
 
+//noinspection ALL
 func connectSerial(selSerialPort string) (err error) {
 	c1 := make(chan int, 1)
 	go func() {
@@ -107,6 +110,7 @@ func connectSerial(selSerialPort string) (err error) {
 	return
 }
 
+//noinspection ALL
 func sendSerialCmd(cmd string) {
 	SerialResponse.Cmd = cmd
 	SerialResponse.Code = -1
@@ -140,6 +144,7 @@ func sendSerial(cmdStr string) string {
 	return resp
 }
 
+//noinspection ALL
 func receiveSerial() (resp string) {
 	buff := make([]byte, 512)
 	var err error

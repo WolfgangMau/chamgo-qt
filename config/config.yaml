@@ -14,6 +14,7 @@ device:
       waitforreceive: 25
       connectiontimeout: 5
       autoconnect: false
+    mfkeybin: mfkey32v2
   cmdset: # RevE-Rebooted
     version: VERSIONMY
     config: CONFIGMY

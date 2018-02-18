@@ -19,6 +19,7 @@ import (
 var myTime time.Time
 var GetUsbListTicker *time.Ticker
 
+//noinspection GoPrintFunctions
 func buttonClicked(btn int) {
 
 	switch ActionButtons[btn] {
@@ -54,11 +55,23 @@ func buttonClicked(btn int) {
 	case "Download":
 		downloadSlots()
 
+	case "RSSI":
+		getRssi()
+
 	default:
 		log.Printf("clicked on Button: %s\n", ActionButtons[btn])
 	}
 }
 
+func getRssi() {
+	if Connected {
+		sendSerialCmd(DeviceActions.GetRssi)
+		RssiVal.SetText(SerialResponse.Payload)
+		RssiVal.Repaint()
+	}
+}
+
+//noinspection GoPrintFunctions
 func slotChecked(slot, state int) {
 	log.Printf(" Checked %d - state: %d\n", slot, state)
 	if state == 2 && Connected {
@@ -104,6 +117,7 @@ func countSelected() int {
 	return c
 }
 
+//noinspection GoPrintFunctions
 func clearSlot() {
 	c1 := 0
 	for i, s := range Slots {
@@ -142,6 +156,7 @@ func activateSlots() {
 }
 
 //ToDO: implemetation
+//noinspection ALL
 func mfkey32Slots() {
 	if !Connected || countSelected() < 1 {
 		if !Connected {
@@ -202,7 +217,7 @@ func mfkey32Slots() {
 									if strings.Contains(res, "Found Key") {
 										key := strings.Split(res, "[")[1]
 										key = key[:12]
-										serialMonitor.AppendPlainText(fmt.Sprintf("Slot %d: Possible Key %s for Nonces on  Blocks %d & %d = %s", i+1, skey, noncemap[i1].Sector, noncemap[i2].Sector, key))
+										serialMonitor.AppendPlainText(fmt.Sprintf("Slot %d: Possible Key %s for Nonces on  Blocks %d & %d = %s", i+1, skey, noncemap[i1].Block, noncemap[i2].Block, key))
 
 									}
 								}
@@ -215,6 +230,7 @@ func mfkey32Slots() {
 	}
 }
 
+//noinspection ALL
 func uploadSlots() bool {
 	if countSelected() > 1 {
 		widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
@@ -274,6 +290,7 @@ func uploadSlots() bool {
 	return true
 }
 
+//noinspection ALL
 func downloadSlots() {
 	if countSelected() > 1 {
 		widgets.QMessageBox_Information(nil, "OK", "please select only one Slot",
@@ -304,7 +321,8 @@ func downloadSlots() {
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.StartDownload)
 			if SerialResponse.Code == 110 {
-				success, failed, data = xmodem.Receive(SerialPort)
+				temp,_:=strconv.Atoi(s.size.Text())
+				success, failed, data = xmodem.Receive(SerialPort,temp)
 
 				log.Printf("Success: %d - failed: %d\n", success, failed)
 			}
@@ -326,7 +344,7 @@ func downloadSlots() {
 
 				log.Println(filename, " - write successful")
 			} else {
-				log.Printf("got only %d bytes - file not written", data.Len())
+				log.Println("bytes - file not written - bytes received: ", data.Len())
 			}
 		}
 	}
@@ -356,7 +374,7 @@ func populateSlots() {
 			c++
 			hardwareSlot = sn + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
 
-			log.Printf("read data for Slot %d\n", sn+1)
+			log.Println("read data for Slot ", sn+1)
 			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			//get slot uid
 			sendSerialCmd(DeviceActions.GetUid)
@@ -462,7 +480,7 @@ func execCmd(cmdstr string, args []string) (res string, err error) {
 	//log.Printf("run Cmd: %s %s\n",cmd.Path,cmd.Args)
 	err = cmd.Run()
 	if err != nil {
-		log.Printf("Error: %s\n", err)
+		log.Println("Error: ", err)
 		return res, err
 	}
 

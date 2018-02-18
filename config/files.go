@@ -1,10 +1,10 @@
 package config
 
 import (
-	"log"
-	"path/filepath"
-	"os"
 	"bufio"
+	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -15,7 +15,7 @@ func GetFilesInFolder(root string, ext string) []string {
 		log.Printf("path: %s\n", path)
 		if filepath.Ext(path) == ext {
 			log.Printf("add %s\n", path)
-			files = append(files, strings.Replace(path,root,"",1))
+			files = append(files, strings.Replace(path, root, "", 1))
 		}
 		return nil
 	})
