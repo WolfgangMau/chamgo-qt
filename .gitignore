@@ -13,7 +13,9 @@ windows
 linux
 darwin
 macros
+macros/mf_auth.cmds
 bin
 *.cmds
 *.exe
 mfkey32v2*
+chamgo-qt.icns
