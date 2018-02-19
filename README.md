@@ -8,13 +8,13 @@ what works in general (on RevE-Rebooted & RevG):
 - Serial Terminal
 - upload / download dump
 - get & decode detection-nonces for the use with mfkey32v2 (RevE-Rebooted)
+- logdownload  (RevG - untested)
+- implementation of crc16 / BCC 
+- display RSSI
+- integration of mfkey32v2 (RevE-Rebooted - workaround with binary)
 
 what is missing:
-- display RSSI
-- integration of mfkey32v2 (RevE-Rebooted)
 - logmode=live (RevG)
-- logdownload  (RevG)
-- implementation of crc16 (RevG)
 
 to install/create the qt-bindings follow the instuctions in the wiki: https://github.com/therecipe/qt/wiki
 
