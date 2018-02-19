@@ -13,7 +13,6 @@ windows
 linux
 darwin
 macros
-macros/mf_auth.cmds
 bin
 *.cmds
 *.exe
