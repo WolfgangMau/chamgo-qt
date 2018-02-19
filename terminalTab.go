@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 	"github.com/WolfgangMau/chamgo-qt/xmodem"
+	"runtime"
 )
 
 var (
@@ -140,7 +141,7 @@ func serialTab() *widgets.QWidget {
 			if Connected {
 
 				log.Println("execute macro ", macroSelect.CurrentText())
-				cmds := config.ReadFileLines(config.Apppath() + string(os.PathSeparator) + "macros" + string(os.PathSeparator) + macroSelect.CurrentText())
+				cmds := config.ReadFileLines(config.Apppath()  + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "macros" + string(os.PathSeparator) + macroSelect.CurrentText())
 				if len(cmds) > 0 {
 					for _, c := range cmds {
 						if strings.Contains(strings.ToLower(c), "detectionmy?") {

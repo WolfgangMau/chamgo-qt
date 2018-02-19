@@ -9,3 +9,11 @@ deploy/
 xmutil
 *.dump
 test*
+windows
+linux
+darwin
+macros
+bin
+*.cmds
+*.exe
+mfkey32v2*
