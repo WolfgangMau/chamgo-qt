@@ -24,7 +24,15 @@ func initcfg() {
 }
 
 func main() {
+	var f *os.File
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	f, err := os.OpenFile(config.Apppath()  + string(os.PathSeparator) + "chamgo-qt.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644)
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
 	initcfg()
 	AppName = Cfg.Gui.Title
 
