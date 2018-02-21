@@ -165,7 +165,7 @@ func Send(serialPort serial.Port, p []Xblock) {
 	//send EOT byte
 	var eot []byte
 	var err error
-	eot = append(eot, EOT)
+	eot = append(eot, CAN)
 	serialPort.Write(eot)
 	n := 0
 	for n == 1 {
@@ -173,7 +173,7 @@ func Send(serialPort serial.Port, p []Xblock) {
 			log.Println(err)
 		}
 		if oBuffer[0] != ACK {
-			log.Printf("nexpectedanswer to EOT: 0x%X\n", oBuffer[0])
+			log.Printf("unexpected answer to EOT: 0x%X\n", oBuffer[0])
 		} else {
 			log.Println("end of transfer")
 
