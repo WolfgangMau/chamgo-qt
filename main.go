@@ -13,6 +13,8 @@ var Cfg config.Config
 var Statusbar *widgets.QStatusBar
 var DeviceActions config.DeviceActions
 var MyTabs *widgets.QTabWidget
+var TagA QTbytes
+var TagB QTbytes
 
 func initcfg() {
 	if _, err := getSerialPorts(); err != nil {
@@ -43,15 +45,17 @@ func main() {
 
 	window := widgets.NewQMainWindow(nil, 0)
 	window.SetWindowTitle(AppName)
-	window.SetFixedSize2(950, 600)
+	window.SetFixedSize2(1100, 600)
 
 	mainlayout := widgets.NewQVBoxLayout()
 
 	MyTabs = widgets.NewQTabWidget(nil)
 	MyTabs.AddTab(allSlots(), "Tags")
-	MyTabs.AddTab(serialTab(), "Serial")
-	MyTabs.SetCurrentIndex(1)
-
+	MyTabs.AddTab(serialTab(), "Device")
+	MyTabs.AddTab(dataTab(), "Data")
+	MyTabs.SetCurrentIndex(2)
+	TagA.LineEdits[8].SetText("ff")
+	TagB.LineEdits[8].SetText("00")
 	mainlayout.AddWidget(MyTabs, 0, 0x0020)
 	mainlayout.SetAlign(33)
 
