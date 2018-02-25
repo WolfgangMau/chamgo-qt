@@ -84,13 +84,44 @@ func dataTab() *widgets.QWidget {
 		}
 		eml2dump.Bytes2File(toFilename,bindata)
 	})
+
 	dataTabLayout.AddWidget(emul2dumpBtn, 1,0, core.Qt__AlignLeft)
 
+
+	loadTagABtn := widgets.NewQPushButton2("Load TagA", nil)
+	loadTagABtn.SetFixedWidth(120)
+	loadTagABtn.ConnectClicked(func(checked bool) {
+		fromFileSelect := widgets.NewQFileDialog(nil, 0)
+		fromFilename := fromFileSelect.GetOpenFileName(nil, "open File", "", "Bin Files (*.dump *.mfd *.bin);;All Files (*.*)", "", fromFileSelect.Options())
+		if fromFilename == "" {
+			log.Println("no file selected")
+			return
+		}
+		TagA.FillFromFile(fromFilename)
+	})
+	dataTabLayout.AddWidget(loadTagABtn, 2,0, core.Qt__AlignLeft)
+
+	loadTagBBtn := widgets.NewQPushButton2("Load TagB", nil)
+	loadTagBBtn.SetFixedWidth(120)
+	loadTagBBtn.ConnectClicked(func(checked bool) {
+		fromFileSelect := widgets.NewQFileDialog(nil, 0)
+		fromFilename := fromFileSelect.GetOpenFileName(nil, "open File", "", "Bin Files (*.dump *.mfd *.bin);;All Files (*.*)", "", fromFileSelect.Options())
+		if fromFilename == "" {
+			log.Println("no file selected")
+			return
+		}
+		TagB.FillFromFile(fromFilename)
+	})
+	dataTabLayout.AddWidget(loadTagBBtn, 3,0, core.Qt__AlignLeft)
+
 	tablayout.AddLayout(dataTabLayout,0)
+
 	scrollerA := TagA.Create(true)
 	tablayout.AddWidget(scrollerA,1, core.Qt__AlignLeft)
+
 	scrollerB:=TagB.Create(false)
 	tablayout.AddWidget(scrollerB,1, core.Qt__AlignLeft)
+
 	//connect(firstScrollbar, SIGNAL(valueChanged(int)), secondScrollbar, SLOT(setValue(int)));
 	//connect(secondScrollbar, SIGNAL(valueChanged(int)), firstScrollbar, SLOT(setValue(int)));
 	//scrollerA.VerticalScrollBar().ConnectSliderChange(func(scrollerB widgets.QAbstractSlider__SliderChange){
@@ -104,9 +135,9 @@ func (QTbytesGrid *QTbytes)Create(labelIt bool) *widgets.QScrollArea{
 	scroller := widgets.NewQScrollArea(nil)
 	scroller.SetWidgetResizable(true)
 	if labelIt {
-		scroller.SetFixedWidth(455)
+		scroller.SetFixedWidth(435)
 	} else {
-		scroller.SetFixedWidth(400)
+		scroller.SetFixedWidth(380)
 	}
 	scroller.SetWidget(wrapper)
 	sl := widgets.NewQGridLayout(scroller)
@@ -118,7 +149,7 @@ func (QTbytesGrid *QTbytes)Create(labelIt bool) *widgets.QScrollArea{
 	blockCount:=0
 	header:=false
 	for i:=0;i<=64;i++{
-		for i2:=0;i2<=16;i2++ {
+		for i2:=0;i2<=15;i2++ {
 			if !header {
 				QTbytesGrid.Labels = append(QTbytesGrid.Labels, widgets.NewQLabel(nil,0))
 				QTbytesGrid.Labels[i2].SetText(strconv.Itoa(i2))
@@ -144,4 +175,15 @@ func (QTbytesGrid *QTbytes)Create(labelIt bool) *widgets.QScrollArea{
 	}
 	wrapper.SetLayout(sl)
 	return scroller
+}
+
+func (QTbytesGrid *QTbytes)FillFromFile(filename string) {
+	data,_ := eml2dump.File2Bytes(filename)
+	if len(QTbytesGrid.LineEdits) != len(data) {
+		log.Printf("data-Len missmamatch grid: %d - file: %d",len(QTbytesGrid.LineEdits), len(data))
+		return
+	}
+	for i,b := range data {
+		QTbytesGrid.LineEdits[i].SetText(hex.EncodeToString([]byte{b}))
+	}
 }
