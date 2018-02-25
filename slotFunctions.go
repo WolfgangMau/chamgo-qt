@@ -316,13 +316,14 @@ func downloadSlots() {
 				return
 			}
 			log.Printf("download a dump from Slot %d into file %s\n", i, filename)
-			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 
+			//select slot
+			sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.StartDownload)
 			if SerialResponse.Code == 110 {
-				temp,_:=strconv.Atoi(s.size.Text())
-				success, failed, data = xmodem.Receive(SerialPort,temp)
+				temp, _ := strconv.Atoi(s.size.Text())
+				success, failed, data = xmodem.Receive(SerialPort, temp)
 
 				log.Printf("Success: %d - failed: %d\n", success, failed)
 			}
@@ -348,6 +349,33 @@ func downloadSlots() {
 			}
 		}
 	}
+}
+
+func getSlotBytes(sn int) (res []byte) {
+	var data bytes.Buffer
+	var failed = 0
+	var success = 0
+	hardwareSlot := sn + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+	//select slot
+	sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
+	//set chameleon into receiver-mode
+	sendSerialCmd(DeviceActions.StartDownload)
+	if SerialResponse.Code == 110 {
+		temp, _ := strconv.Atoi(Slots[sn].size.Text())
+		log.Printf("expecting %d bytes", temp)
+		success, failed, data = xmodem.Receive(SerialPort, temp)
+		SerialPort.Write([]byte{xmodem.EOT})
+		log.Printf("HardwareSlot: %d - Success: %d - failed: %d  -  data-len: %d\n",hardwareSlot , success, failed, len(data.Bytes()))
+	}
+	if _, err := SerialPort.Write([]byte{xmodem.CAN}); err != nil {
+		SerialPort.Write([]byte{xmodem.CAN})
+		log.Println(err)
+		return nil
+	}
+
+	//ToDo: dirty woraround to avoid 'runs one time'-problem
+	sendSerialCmd(DeviceActions.GetRssi)
+	return data.Bytes()
 }
 
 func populateSlots() {

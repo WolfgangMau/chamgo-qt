@@ -6,8 +6,8 @@ import (
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"os"
-	"strconv"
 	"runtime"
+	"strconv"
 )
 
 type Slot struct {
@@ -142,9 +142,9 @@ func allSlots() *widgets.QWidget {
 
 	var mfkeyBinPresent = true
 	if len(Cfg.Device[SelectedDeviceId].Config.MfkeyBin) > 0 {
-		if _, err := os.Stat(config.Apppath() + string(os.PathSeparator) + runtime.GOOS  + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err) {
+		if _, err := os.Stat(config.Apppath() + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin); os.IsNotExist(err) {
 			mfkeyBinPresent = false
-			log.Println("No mfkey32 binary configured or found in " + config.Apppath() + string(os.PathSeparator) + runtime.GOOS  + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+			log.Println("No mfkey32 binary configured or found in " + config.Apppath() + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 		}
 	}
 
@@ -153,15 +153,14 @@ func allSlots() *widgets.QWidget {
 	if !ok || !mfkeyBinPresent || Cfg.Device[SelectedDeviceId].Config.MfkeyBin == "" {
 		withdet = false
 	}
-	log.Print("MfkeyBin: ",Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
-
+	log.Print("MfkeyBin: ", Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 
 	for i, s := range ActionButtons {
 		actionButtons[i].b = widgets.NewQPushButton2(s, nil)
 		if s == "mfkey32" {
 			actionButtons[i].b.SetEnabled(withdet)
 			if !withdet {
-				actionButtons[i].b.SetToolTip("No mfkey32 binary configured or found in\n" + config.Apppath() + string(os.PathSeparator) + runtime.GOOS  + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
+				actionButtons[i].b.SetToolTip("No mfkey32 binary configured or found in\n" + config.Apppath() + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "bin" + string(os.PathSeparator) + Cfg.Device[SelectedDeviceId].Config.MfkeyBin)
 			}
 		}
 

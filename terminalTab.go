@@ -6,14 +6,14 @@ import (
 	"github.com/WolfgangMau/chamgo-qt/config"
 	"github.com/WolfgangMau/chamgo-qt/crc16"
 	"github.com/WolfgangMau/chamgo-qt/nonces"
+	"github.com/WolfgangMau/chamgo-qt/xmodem"
 	"github.com/therecipe/qt/widgets"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/WolfgangMau/chamgo-qt/xmodem"
-	"runtime"
 )
 
 var (
@@ -141,7 +141,7 @@ func serialTab() *widgets.QWidget {
 			if Connected {
 
 				log.Println("execute macro ", macroSelect.CurrentText())
-				cmds := config.ReadFileLines(config.Apppath()  + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "macros" + string(os.PathSeparator) + macroSelect.CurrentText())
+				cmds := config.ReadFileLines(config.Apppath() + string(os.PathSeparator) + runtime.GOOS + string(os.PathSeparator) + "macros" + string(os.PathSeparator) + macroSelect.CurrentText())
 				if len(cmds) > 0 {
 					for _, c := range cmds {
 						if strings.Contains(strings.ToLower(c), "detectionmy?") {
@@ -173,7 +173,7 @@ func serialTab() *widgets.QWidget {
 								SerialSendOnly(c)
 								time.Sleep(time.Millisecond * 500)
 								success, failed, data := xmodem.Receive(SerialPort, 15)
-								serialMonitor.AppendPlainText(fmt.Sprintf("\nLogReceive Blocks Success: %d Failed: %d\nData:\n%s\n",success,failed,string(hex.EncodeToString(data.Bytes()))))
+								serialMonitor.AppendPlainText(fmt.Sprintf("\nLogReceive Blocks Success: %d Failed: %d\nData:\n%s\n", success, failed, string(hex.EncodeToString(data.Bytes()))))
 
 							} else {
 								sendSerialCmd(c)

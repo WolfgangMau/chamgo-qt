@@ -27,7 +27,7 @@ type Xblock struct {
 func Receive(serialPort serial.Port, size int) (success int, failed int, data bytes.Buffer) {
 
 	oBuffer := make([]byte, 1)
-	dBuffer := make([]byte, 1024)
+	dBuffer := make([]byte, size)
 
 	//log.Println("prepare")
 	var protocmd []byte

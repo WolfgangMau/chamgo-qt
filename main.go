@@ -28,7 +28,7 @@ func initcfg() {
 func main() {
 	var f *os.File
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	f, err := os.OpenFile(config.Apppath()  + string(os.PathSeparator) + "chamgo-qt.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644)
+	f, err := os.OpenFile(config.Apppath()+string(os.PathSeparator)+"chamgo-qt.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Printf("error opening file: %v", err)
 	}
@@ -54,8 +54,7 @@ func main() {
 	MyTabs.AddTab(serialTab(), "Device")
 	MyTabs.AddTab(dataTab(), "Data")
 	MyTabs.SetCurrentIndex(2)
-	TagA.LineEdits[8].SetText("ff")
-	TagB.LineEdits[8].SetText("00")
+
 	mainlayout.AddWidget(MyTabs, 0, 0x0020)
 	mainlayout.SetAlign(33)
 
