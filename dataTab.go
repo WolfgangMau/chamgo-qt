@@ -15,6 +15,7 @@ type QTbytes struct {
 	LineEdits []*widgets.QLineEdit
 	Labels []*widgets.QLabel
 }
+var ScrollLock int
 
 func dataTab() *widgets.QWidget {
 	tablayout:=widgets.NewQHBoxLayout()
@@ -114,6 +115,13 @@ func dataTab() *widgets.QWidget {
 	})
 	dataTabLayout.AddWidget(loadTagBBtn, 3,0, core.Qt__AlignLeft)
 
+	lockScrollChk := widgets.NewQCheckBox2("ScrollLock",nil)
+	lockScrollChk.ConnectStateChanged(func (state int) {
+		ScrollLock = state
+		log.Printf("ScrollLock: %d", ScrollLock)
+	})
+	dataTabLayout.AddWidget(lockScrollChk,4,0, core.Qt__AlignLeft)
+
 	tablayout.AddLayout(dataTabLayout,0)
 
 	scrollerA := TagA.Create(true)
@@ -124,8 +132,16 @@ func dataTab() *widgets.QWidget {
 
 	//connect(firstScrollbar, SIGNAL(valueChanged(int)), secondScrollbar, SLOT(setValue(int)));
 	//connect(secondScrollbar, SIGNAL(valueChanged(int)), firstScrollbar, SLOT(setValue(int)));
-	//scrollerA.VerticalScrollBar().ConnectSliderChange(func(scrollerB widgets.QAbstractSlider__SliderChange){
-	//})
+	scrollerA.VerticalScrollBar().ConnectValueChanged(func(positionA int){
+		if ScrollLock==2 {
+			scrollerB.VerticalScrollBar().SetValue(positionA)
+		}
+	})
+	scrollerB.VerticalScrollBar().ConnectValueChanged(func(positionB int){
+		if ScrollLock==2 {
+			scrollerA.VerticalScrollBar().SetValue(positionB)
+		}
+	})
 	dataTabPage.SetLayout(tablayout)
 	return dataTabPage
 }
