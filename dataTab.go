@@ -156,14 +156,27 @@ func dataTab() *widgets.QWidget {
 	//left menuy
 	dataTabLayout := widgets.NewQGridLayout(nil)
 	dataTabLayout.SetAlign(core.Qt__AlignTop)
-	dataTabLayout.AddWidget(dump2emulBtn, 0, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(emul2dumpBtn, 1, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(loadTagABtn, 2, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(loadTagBBtn, 3, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(diffTagBtn, 4, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(mapTagBtn, 5, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(lockScrollChk, 6, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(slotSelect, 7, 0, core.Qt__AlignLeft)
+
+	fileGroup := widgets.NewQGroupBox2("File based",nil)
+	fileLayout := widgets.NewQVBoxLayout()
+
+	fileLayout.AddWidget(dump2emulBtn, 0,core.Qt__AlignLeft)
+	fileLayout.AddWidget(emul2dumpBtn, 0,core.Qt__AlignLeft)
+	fileLayout.AddWidget(loadTagABtn, 0,core.Qt__AlignLeft)
+	fileLayout.AddWidget(loadTagBBtn, 0,core.Qt__AlignLeft)
+
+	fileGroup.SetLayout(fileLayout)
+	dataTabLayout.AddWidget(fileGroup, 0, 0, core.Qt__AlignLeft)
+
+	//dataTabLayout.AddWidget(dump2emulBtn, 0, 0, core.Qt__AlignLeft)
+	//dataTabLayout.AddWidget(emul2dumpBtn, 1, 0, core.Qt__AlignLeft)
+	//dataTabLayout.AddWidget(loadTagABtn, 2, 0, core.Qt__AlignLeft)
+	//dataTabLayout.AddWidget(loadTagBBtn, 3, 0, core.Qt__AlignLeft)
+
+	dataTabLayout.AddWidget(diffTagBtn, 1, 0, core.Qt__AlignLeft)
+	dataTabLayout.AddWidget(mapTagBtn, 2, 0, core.Qt__AlignLeft)
+	dataTabLayout.AddWidget(lockScrollChk, 3, 0, core.Qt__AlignLeft)
+	dataTabLayout.AddWidget(slotSelect, 4, 0, core.Qt__AlignLeft)
 	tablayout.AddLayout(dataTabLayout, 0)
 
 	scrollerA := TagA.Create(true)
