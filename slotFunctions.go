@@ -371,7 +371,7 @@ func getSlotBytes(sn int) (res []byte) {
 		log.Printf("expecting %d bytes", temp)
 		success, failed, data = xmodem.Receive(SerialPort, temp)
 		SerialPort.Write([]byte{xmodem.EOT})
-		log.Printf("HardwareSlot: %d - Success: %d - failed: %d  -  data-len: %d\n",hardwareSlot , success, failed, len(data.Bytes()))
+		log.Printf("HardwareSlot: %d - Success: %d - failed: %d  -  data-len: %d\n", hardwareSlot, success, failed, len(data.Bytes()))
 	}
 	if _, err := SerialPort.Write([]byte{xmodem.CAN}); err != nil {
 		SerialPort.Write([]byte{xmodem.CAN})
