@@ -12,6 +12,7 @@ what works in general (on RevE-Rebooted & RevG):
 - implementation of crc16 / BCC 
 - display RSSI
 - integration of mfkey32v2 (RevE-Rebooted - workaround with binary)
+- diff/edit Dump-/Slot-Data
 
 what is missing:
 - logmode=live (RevG)

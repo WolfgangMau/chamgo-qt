@@ -9,6 +9,11 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"github.com/WolfgangMau/chamgo-qt/crc16"
+	"github.com/WolfgangMau/chamgo-qt/xmodem"
+	"github.com/WolfgangMau/chamgo-qt/config"
+	"path/filepath"
+	"runtime"
 )
 
 type QTbytes struct {
@@ -17,14 +22,12 @@ type QTbytes struct {
 }
 
 var ScrollLock int
-
+var RadioTag string
 func dataTab() *widgets.QWidget {
 	tablayout := widgets.NewQHBoxLayout()
-
-
 	dataTabPage := widgets.NewQWidget(nil, 0)
-
-	dump2emulBtn := widgets.NewQPushButton2("Dump2Emul", nil)
+	dump2emulBtn := widgets.NewQPushButton2("Dump > Emul", nil)
+	dump2emulBtn.SetToolTip("convert Binary-File to ASCII-File")
 	dump2emulBtn.SetFixedWidth(120)
 	dump2emulBtn.ConnectClicked(func(checked bool) {
 
@@ -55,7 +58,8 @@ func dataTab() *widgets.QWidget {
 	})
 
 
-	emul2dumpBtn := widgets.NewQPushButton2("Emul2Dump", nil)
+	emul2dumpBtn := widgets.NewQPushButton2("Emul > Dump", nil)
+	emul2dumpBtn.SetToolTip("convert ASCII-File to Binary-File")
 	emul2dumpBtn.SetFixedWidth(120)
 	emul2dumpBtn.ConnectClicked(func(checked bool) {
 
@@ -87,7 +91,8 @@ func dataTab() *widgets.QWidget {
 	})
 
 
-	loadTagABtn := widgets.NewQPushButton2("Load TagA", nil)
+	loadTagABtn := widgets.NewQPushButton2("Dump > Tag A", nil)
+	loadTagABtn.SetToolTip("load Data from Binary-File to Tag A")
 	loadTagABtn.SetFixedWidth(120)
 	loadTagABtn.ConnectClicked(func(checked bool) {
 		fromFileSelect := widgets.NewQFileDialog(nil, 0)
@@ -99,7 +104,8 @@ func dataTab() *widgets.QWidget {
 		TagA.FillFromFile(fromFilename)
 	})
 
-	loadTagBBtn := widgets.NewQPushButton2("Load TagB", nil)
+	loadTagBBtn := widgets.NewQPushButton2("Dump > Tag B", nil)
+	loadTagBBtn.SetToolTip("load Data from Binary-File to Tag A+B")
 	loadTagBBtn.SetFixedWidth(120)
 	loadTagBBtn.ConnectClicked(func(checked bool) {
 		fromFileSelect := widgets.NewQFileDialog(nil, 0)
@@ -112,40 +118,96 @@ func dataTab() *widgets.QWidget {
 	})
 
 
-	diffTagBtn := widgets.NewQPushButton2("Diff A/B", nil)
+	diffTagBtn := widgets.NewQPushButton2("Diff Tags", nil)
+	diffTagBtn.SetToolTip("show differences between Tag A & Tag B")
 	diffTagBtn.SetFixedWidth(120)
 	diffTagBtn.ConnectClicked(func(checked bool) {
 		DiffTags(TagA, TagB)
 	})
 
-
-	mapTagBtn := widgets.NewQPushButton2("Map Mf1K", nil)
-	mapTagBtn.SetFixedWidth(120)
-	mapTagBtn.ConnectClicked(func(checked bool) {
-		TagA.Map("Mf1K")
-		TagB.Map("Mf1K")
+	mapfiles := config.GetFilesInFolder(config.Apppath()+string(filepath.Separator)+runtime.GOOS+string(filepath.Separator)+"maps"+string(filepath.Separator),".map")
+	mapSelect := widgets.NewQComboBox(nil)
+	mapSelect.SetFixedWidth(120)
+	mapSelect.AddItems([]string{"mappings"})
+	if len(mapfiles)>0 {
+		mapSelect.AddItems(mapfiles)
+	}
+	mapSelect.ConnectCurrentIndexChanged(func(index int) {
+		if index > 0 {
+			tagmap := config.TagMap{}
+			tagmap.Load(mapSelect.CurrentText())
+			TagA.Map(tagmap)
+			TagB.Map(tagmap)
+			mapSelect.SetCurrentIndex(0)
+			mapSelect.Repaint()
+		}
 	})
+
 
 	var slotItems  []string
 	slotSelect := widgets.NewQComboBox(nil)
+	slotSelect.SetToolTip("load Data from Slot to Tag A or B")
 	slotSelect.SetFixedWidth(120)
 	slotSelect.ConnectCurrentIndexChanged(func(index int) {
 		if Connected && index>0 {
 			data := getSlotBytes(index - 1)
-			log.Print("data len: ", len(data))
 			if len(data)>0 {
-				TagA.FillFromBytes(data)
+				if RadioTag=="A" {
+					TagA.FillFromBytes(data)
+				} else {
+					TagB.FillFromBytes(data)
+				}
+				slotSelect.SetCurrentIndex(0)
 			}
 		}
 	})
-	slotItems = append(slotItems, "Load from Slot")
+	slotSelect.AddItems([]string{"Slot > Tag"})
+
 	for i:=Cfg.Device[SelectedDeviceId].Config.Slot.First; i<=Cfg.Device[SelectedDeviceId].Config.Slot.Last; i++ {
 		slotItems = append(slotItems, "Slot "+strconv.Itoa(i))
 	}
 	slotSelect.AddItems(slotItems)
 
 
+	slot2Select := widgets.NewQComboBox(nil)
+	slot2Select.SetToolTip("load Data from Slot to Tag A or B")
+	slot2Select.SetFixedWidth(120)
+	slot2Select.ConnectCurrentIndexChanged(func(index int) {
+		if Connected && index>0 {
+			var data []byte
+			var tag QTbytes
+			switch RadioTag {
+			case "A": tag=TagA
+			case "B": tag=TagB
+			}
+			for _,le := range tag.LineEdits{
+				lbyte,err := hex.DecodeString(le.Text())
+
+				if err != nil {
+					log.Print(err)
+				} else {
+					if len(lbyte)==1 {
+						data = append(data, lbyte[0])
+					}
+				}
+			}
+			if len(data)>0 {
+				if RadioTag=="A" {
+					TagA.Tag2Slot(index-1, data)
+				} else {
+					TagB.Tag2Slot(index-1, data)
+				}
+				slot2Select.SetCurrentIndex(0)
+			}
+		}
+	})
+	slot2Select.AddItems([]string{"Tag > Slot"})
+	slot2Select.AddItems(slotItems)
+
 	lockScrollChk := widgets.NewQCheckBox2("ScrollLock", nil)
+	lockScrollChk.SetToolTip("Scroll together or separately")
+	lockScrollChk.SetChecked(true)
+	ScrollLock=2
 	lockScrollChk.ConnectStateChanged(func(state int) {
 
 			ScrollLock = state
@@ -153,37 +215,86 @@ func dataTab() *widgets.QWidget {
 
 	})
 
+
+
 	//left menuy
+
+
 	dataTabLayout := widgets.NewQGridLayout(nil)
 	dataTabLayout.SetAlign(core.Qt__AlignTop)
 
-	fileGroup := widgets.NewQGroupBox2("File based",nil)
+
+	//slot action
+	slotGroup := widgets.NewQGroupBox2("Slot Import / Export", nil)
+	slotlayout:= widgets.NewQVBoxLayout()
+	radioLayout := widgets.NewQHBoxLayout()
+	tagARadio := widgets.NewQRadioButton2("Tag A",slotGroup)
+	tagARadio.ConnectClicked( func(checked bool) {
+		if checked {
+			RadioTag = "A"
+		} else {
+			RadioTag = "B"
+		}
+	})
+	tagARadio.SetChecked(true)
+	RadioTag="A"
+	tagBRadio := widgets.NewQRadioButton2("Tag B",slotGroup)
+	tagBRadio.ConnectClicked( func(checked bool) {
+		if checked {
+			RadioTag = "B"
+		} else {
+			RadioTag = "A"
+		}
+	})
+	radioLayout.AddWidget(tagARadio, 0,core. Qt__AlignCenter)
+	radioLayout.AddWidget(tagBRadio, 0,core.Qt__AlignCenter)
+	slotlayout.AddLayout(radioLayout,0)
+	slotlayout.AddWidget(slotSelect, 0,core.Qt__AlignCenter)
+	slotlayout.AddWidget(slot2Select, 0,core.Qt__AlignCenter)
+	slotGroup.SetFixedWidth(155)
+	slotGroup.SetLayout(slotlayout)
+
+	//File based action
+	fileGroup := widgets.NewQGroupBox2("File Import / Export",nil)
 	fileLayout := widgets.NewQVBoxLayout()
-
-	fileLayout.AddWidget(dump2emulBtn, 0,core.Qt__AlignLeft)
-	fileLayout.AddWidget(emul2dumpBtn, 0,core.Qt__AlignLeft)
-	fileLayout.AddWidget(loadTagABtn, 0,core.Qt__AlignLeft)
-	fileLayout.AddWidget(loadTagBBtn, 0,core.Qt__AlignLeft)
-
+	fileLayout.AddWidget(dump2emulBtn, 0,core.Qt__AlignCenter)
+	fileLayout.AddWidget(emul2dumpBtn, 0,core.Qt__AlignCenter)
+	fileLayout.AddWidget(loadTagABtn, 0,core.Qt__AlignCenter)
+	fileLayout.AddWidget(loadTagBBtn, 0,core.Qt__AlignCenter)
+	fileGroup.SetFixedWidth(155)
 	fileGroup.SetLayout(fileLayout)
-	dataTabLayout.AddWidget(fileGroup, 0, 0, core.Qt__AlignLeft)
 
-	//dataTabLayout.AddWidget(dump2emulBtn, 0, 0, core.Qt__AlignLeft)
-	//dataTabLayout.AddWidget(emul2dumpBtn, 1, 0, core.Qt__AlignLeft)
-	//dataTabLayout.AddWidget(loadTagABtn, 2, 0, core.Qt__AlignLeft)
-	//dataTabLayout.AddWidget(loadTagBBtn, 3, 0, core.Qt__AlignLeft)
 
-	dataTabLayout.AddWidget(diffTagBtn, 1, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(mapTagBtn, 2, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(lockScrollChk, 3, 0, core.Qt__AlignLeft)
-	dataTabLayout.AddWidget(slotSelect, 4, 0, core.Qt__AlignLeft)
+	//Diff/Map based actions
+	diffGroup := widgets.NewQGroupBox2("Diff / Map",nil)
+	difflayout := widgets.NewQVBoxLayout()
+	difflayout.AddWidget(diffTagBtn,0,core.Qt__AlignCenter)
+	difflayout.AddWidget(mapSelect,0,core.Qt__AlignCenter)
+	difflayout.AddWidget(lockScrollChk,0,core.Qt__AlignCenter)
+	diffGroup.SetFixedWidth(155)
+	diffGroup.SetLayout(difflayout)
+
+
+
+	dataTabLayout.AddWidget(fileGroup, 0, 0, core.Qt__AlignCenter)
+	dataTabLayout.AddWidget(slotGroup, 1, 0, core.Qt__AlignCenter)
+	dataTabLayout.AddWidget(diffGroup, 2, 0, core.Qt__AlignCenter)
 	tablayout.AddLayout(dataTabLayout, 0)
 
+	tagALayout:=widgets.NewQVBoxLayout()
 	scrollerA := TagA.Create(true)
-	tablayout.AddWidget(scrollerA, 1, core.Qt__AlignLeft)
+	tagAInfo := widgets.NewQLabel2("Tag A",nil,0)
+	tagALayout.AddWidget(tagAInfo, 0, core.Qt__AlignCenter)
+	tagALayout.AddWidget(scrollerA, 0, core.Qt__AlignLeft)
+	tablayout.AddLayout(tagALayout, 1)
 
+	tagBLayout:=widgets.NewQVBoxLayout()
 	scrollerB := TagB.Create(false)
-	tablayout.AddWidget(scrollerB, 1, core.Qt__AlignLeft)
+	tagBInfo := widgets.NewQLabel2("Tag B",nil,0)
+	tagBLayout.AddWidget(tagBInfo, 0, core.Qt__AlignCenter)
+	tagBLayout.AddWidget(scrollerB, 0, core.Qt__AlignLeft)
+	tablayout.AddLayout(tagBLayout, 0)
+
 
 	scrollerA.VerticalScrollBar().ConnectValueChanged(func(positionA int) {
 		if ScrollLock == 2 {
@@ -199,7 +310,7 @@ func dataTab() *widgets.QWidget {
 	return dataTabPage
 }
 
-func (QTbytesGrid *QTbytes) Create(labelIt bool) *widgets.QScrollArea {
+func (QTbytesGrid *QTbytes) Create( labelIt bool) *widgets.QScrollArea {
 	wrapper := widgets.NewQWidget(nil, 0)
 	scroller := widgets.NewQScrollArea(nil)
 	scroller.SetWidgetResizable(true)
@@ -212,6 +323,7 @@ func (QTbytesGrid *QTbytes) Create(labelIt bool) *widgets.QScrollArea {
 	sl := widgets.NewQGridLayout(scroller)
 	sl.SetSpacing(2)
 	sl.SetAlign(core.Qt__AlignLeft)
+
 	startRow := 0
 	startcell := 0
 	byteCount := 0
@@ -236,6 +348,7 @@ func (QTbytesGrid *QTbytes) Create(labelIt bool) *widgets.QScrollArea {
 				QTbytesGrid.LineEdits[byteCount].SetMaxLength(2)
 				QTbytesGrid.LineEdits[byteCount].SetFixedWidth(20)
 				QTbytesGrid.LineEdits[byteCount].SetAlignment(core.Qt__AlignHCenter)
+
 				sl.AddWidget(QTbytesGrid.LineEdits[byteCount], startRow+i, startcell+i2+1, core.Qt__AlignLeft)
 				byteCount++
 			}
@@ -243,6 +356,7 @@ func (QTbytesGrid *QTbytes) Create(labelIt bool) *widgets.QScrollArea {
 		header = true
 		blockCount++
 	}
+
 	wrapper.SetLayout(sl)
 	return scroller
 }
@@ -268,9 +382,27 @@ func (QTbytesGrid *QTbytes) FillFromBytes(data []byte) {
 	}
 }
 
+func (QTbytesGrid *QTbytes) Tag2Slot(slotnumber int, data []byte) {
+	hardwareSlot := slotnumber + Cfg.Device[SelectedDeviceId].Config.Slot.Offset
+	sendSerialCmd(DeviceActions.SelectSlot + strconv.Itoa(hardwareSlot))
+	p := Bytes2Packets(data)
+	//set chameleon into receiver-mode
+	sendSerialCmd(DeviceActions.StartUpload)
+	if SerialResponse.Code == 110 {
+		//start uploading packets
+		xmodem.Send(SerialPort, p)
+	}
+}
+
 func (QTbytesGrid *QTbytes) SetColor(index int, color string, selcolor string) {
 	style := "background: " + rgbColorString(color) + " selection-background-color: " + rgbColorString(selcolor)
 	QTbytesGrid.LineEdits[index].SetStyleSheet(style)
+	QTbytesGrid.LineEdits[index].Repaint()
+}
+
+func (QTbytesGrid *QTbytes) SetTooltip(index int, tip string) {
+	QTbytesGrid.LineEdits[index].SetToolTip(tip)
+	QTbytesGrid.LineEdits[index].Repaint()
 }
 
 func rgbColorString(color string) (res string) {
@@ -325,65 +457,74 @@ func DiffTags(tagA QTbytes, tagB QTbytes) {
 	}
 }
 
-func (tag *QTbytes)Map(mapName string) {
-	sectorblock:=0
-	blockbyte:=0
-	sectror:=0
-
-	for i,_ := range tag.LineEdits {
-		if i>15 && float64(i%16)==0.0 {
-			sectorblock++
-			if float64((sectorblock)%4)==0.0 {
-				sectror++
-				sectorblock=0
-			}
-			blockbyte=0
-		}
-		tooltip:="Sector #"+strconv.Itoa(sectror)+" - sectorBlock #"+strconv.Itoa(sectorblock)+" - blockByte #"+strconv.Itoa(blockbyte)
-		if mapName == "Mf1K" {
-			switch {
-			// UID
-			case i <= 3:
-				tag.SetColor(i, "magenta", "defaultsel")
-				tooltip += "\nUID"
-				// BCC
-			case i == 4:
-				tag.SetColor(i, "yellow", "defaultsel")
-				tooltip += "\nBCC"
-				// SAK
-			case i == 5:
-				tag.SetColor(i, "magenta", "defaultsel")
-				tooltip += "\nSAK"
-				// SAK
-			case i == 6:
-				tag.SetColor(i, "magenta", "defaultsel")
-				tooltip += "\nATQA_0"
-				// SAK
-			case i == 7:
-				tag.SetColor(i, "magenta", "defaultsel")
-				// SAK
-			case i >7 && i< 16:
-				tag.SetColor(i, "grey", "defaultsel")
-				tooltip += "\nManufacuter Data"
-				// KEYA/B
-			case sectorblock == 3 && (blockbyte <= 5 || blockbyte > 9):
-				tag.SetColor(i, "magenta", "defaultsel")
-				if blockbyte <= 5 {
-					tooltip += "\nKEY A"
+func (tag *QTbytes)Map(tm config.TagMap){
+	if len(tm.Mappings)>0 {
+		for _,m := range tm.Mappings {
+			if len(m.MapBytes) >0 {
+				if len(m.MapFuncs)==0 {
+					for _, mb := range m.MapBytes {
+						tag.SetColor(mb.Pos, mb.Color, "defaultsel")
+						tag.SetTooltip(mb.Pos, mb.Tooltip)
+					}
 				} else {
-					tooltip += "\nKEY B"
+					words := strings.Split(m.MapFuncs[0].Name, " ")
+					if len(words)==3 {
+						switch strings.ToLower(words[0]) {
+						case "each":
+							switch strings.ToLower(words[1]) {
+							case "sectorblock":
+								targetBlock,_ := strconv.Atoi(words[2])
+								sectorBlock:=0
+								sector:=0
+								blockByte:=0
+								for i := range tag.LineEdits {
+									if blockByte==16 {
+										sectorBlock++
+										blockByte = 0
+										if sectorBlock==4 {
+											sector++
+											sectorBlock=0
+										}
+									}
+									if sectorBlock==targetBlock {
+										if blockByte >= m.Start && blockByte <= m.End {
+											tag.SetColor(i,m.MapBytes[0].Color, "defaultsel")
+											tag.SetTooltip(i,"Sector: "+strconv.Itoa(sector)+" - sectorBlock: "+strconv.Itoa(sectorBlock)+" blockByte: "+strconv.Itoa(i)+"\n"+m.MapBytes[0].Tooltip)
+										}
+									}
+									blockByte++
+								}
+							}
+						case "check":
+							switch strings.ToLower(words[1]) {
+							case "bcc":
+								if  tag.CalcBCC(4) == tag.LineEdits[4].Text() {
+									tag.SetColor(4, words[2], "defaultsel")
+									tag.SetTooltip(4, "BCC OK")
+								} else {
+									tag.SetColor(4, m.MapBytes[0].Color, "defaultsel")
+									tag.SetTooltip(4, "BCC != "+tag.CalcBCC(4))
+								}
+							}
+						}
+					}
 				}
-				// Permissions
-			case sectorblock == 3 && blockbyte > 5 && blockbyte < 9:
-				tag.SetColor(i, "grey", "defaultsel")
-				tooltip += "\nPERM"
-				// Peneral Purpose
-			case sectorblock == 3 && blockbyte == 9:
-				tag.SetColor(i, "lightblue", "yellow")
-				tooltip += "\nGPS"
 			}
 		}
-		tag.LineEdits[i].SetToolTip(tooltip)
-		blockbyte++
 	}
+}
+
+func (tag *QTbytes)GetId(size int) string{
+	var res string
+	for i:=0;i<size;i++ {
+		res += tag.LineEdits[i].Text()
+	}
+	return res
+}
+
+func (tag *QTbytes)CalcBCC(size int) string {
+	id:=tag.GetId(size)
+	b,_:=hex.DecodeString(id)
+	bcc2 := hex.EncodeToString([]byte{crc16.GetBCC(b)})
+	return bcc2
 }

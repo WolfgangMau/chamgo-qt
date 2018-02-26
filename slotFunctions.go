@@ -263,20 +263,7 @@ func uploadSlots() bool {
 			fIn.Close()
 
 			var p []xmodem.Xblock
-			var p1 xmodem.Xblock
-
-			for _, d := range data {
-				p1.Payload = append(p1.Payload, d)
-
-				if len(p1.Payload) == 128 {
-					p1.Proto = []byte{xmodem.SOH}
-					p1.PacketNum = len(p)
-					p1.PacketInv = 255 - p1.PacketNum
-					p1.Checksum = int(xmodem.Checksum(p1.Payload, 0))
-					p = append(p, p1)
-					p1.Payload = []byte("")
-				}
-			}
+			p = Bytes2Packets(data)
 
 			//set chameleon into receiver-mode
 			sendSerialCmd(DeviceActions.StartUpload)
@@ -288,6 +275,25 @@ func uploadSlots() bool {
 	}
 	refreshSlot()
 	return true
+}
+
+func Bytes2Packets(data []byte) []xmodem.Xblock {
+	var p []xmodem.Xblock
+	var p1 xmodem.Xblock
+
+	for _, d := range data {
+		p1.Payload = append(p1.Payload, d)
+
+		if len(p1.Payload) == 128 {
+			p1.Proto = []byte{xmodem.SOH}
+			p1.PacketNum = len(p)
+			p1.PacketInv = 255 - p1.PacketNum
+			p1.Checksum = int(xmodem.Checksum(p1.Payload, 0))
+			p = append(p, p1)
+			p1.Payload = []byte("")
+		}
+	}
+	return p
 }
 
 //noinspection ALL
